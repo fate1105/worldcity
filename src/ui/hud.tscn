@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://hud_scene_v1"]
+
+[ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+layer = 5
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="PanelContainer" parent="."]
+anchors_preset = 3
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 1
+
+[node name="HBoxMain" type="HBoxContainer" parent="TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxTime" type="HBoxContainer" parent="TopBar/HBoxMain"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelTime" type="Label" parent="TopBar/HBoxMain/HBoxTime"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ngày 1  Tháng 1  Năm 1"
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="HBoxSpeed" type="HBoxContainer" parent="TopBar/HBoxMain"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BtnPause" type="Button" parent="TopBar/HBoxMain/HBoxSpeed"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 36)
+text = "⏸"
+theme_override_font_sizes/font_size = 18
+
+[node name="Btn1x" type="Button" parent="TopBar/HBoxMain/HBoxSpeed"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 36)
+text = "▶ x1"
+theme_override_font_sizes/font_size = 14
+
+[node name="Btn2x" type="Button" parent="TopBar/HBoxMain/HBoxSpeed"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 36)
+text = "▶▶ x2"
+theme_override_font_sizes/font_size = 14
+
+[node name="Btn5x" type="Button" parent="TopBar/HBoxMain/HBoxSpeed"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 36)
+text = "⏩ x5"
+theme_override_font_sizes/font_size = 14
