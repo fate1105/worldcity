@@ -29,22 +29,22 @@ func load_all() -> void:
 # ──────────────────────────────────────────────
 
 func building(key: String) -> Dictionary:
-	return _get(_buildings, "buildings", key)
+	return _lookup(_buildings, "buildings", key)
 
 func race(key: String) -> Dictionary:
-	return _get(_races, "races", key)
+	return _lookup(_races, "races", key)
 
 func trait_data(key: String) -> Dictionary:
-	return _get(_traits, "traits", key)
+	return _lookup(_traits, "traits", key)
 
 func power(key: String) -> Dictionary:
-	return _get(_powers, "powers", key)
+	return _lookup(_powers, "powers", key)
 
 func disaster(key: String) -> Dictionary:
-	return _get(_disasters, "disasters", key)
+	return _lookup(_disasters, "disasters", key)
 
 func terrain(key: String) -> Dictionary:
-	return _get(_terrain, "terrain", key)
+	return _lookup(_terrain, "terrain", key)
 
 func balance(key: String) -> Variant:
 	if _balance.has(key):
@@ -65,7 +65,7 @@ func all_powers() -> Dictionary:
 # Nội bộ
 # ──────────────────────────────────────────────
 
-func _get(db: Dictionary, db_name: String, key: String) -> Dictionary:
+func _lookup(db: Dictionary, db_name: String, key: String) -> Dictionary:
 	if db.has(key):
 		return db[key] as Dictionary
 	push_error("DataDB: không tìm thấy '%s' trong %s" % [key, db_name])

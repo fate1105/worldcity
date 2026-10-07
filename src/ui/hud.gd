@@ -3,11 +3,11 @@ extends CanvasLayer
 ## HUD chính — hiện thị thời gian và nút điều khiển tốc độ
 ## Nhận event từ EventBus, không đọc state trực tiếp mỗi frame
 
-@onready var _label_time: Label     = $TopBar/HBoxTime/LabelTime
-@onready var _btn_pause: Button     = $TopBar/HBoxSpeed/BtnPause
-@onready var _btn_1x: Button        = $TopBar/HBoxSpeed/Btn1x
-@onready var _btn_2x: Button        = $TopBar/HBoxSpeed/Btn2x
-@onready var _btn_5x: Button        = $TopBar/HBoxSpeed/Btn5x
+@onready var _label_time: Label     = $TopBar/HBoxMain/HBoxTime/LabelTime
+@onready var _btn_pause: Button     = $TopBar/HBoxMain/HBoxSpeed/BtnPause
+@onready var _btn_1x: Button        = $TopBar/HBoxMain/HBoxSpeed/Btn1x
+@onready var _btn_2x: Button        = $TopBar/HBoxMain/HBoxSpeed/Btn2x
+@onready var _btn_5x: Button        = $TopBar/HBoxMain/HBoxSpeed/Btn5x
 
 func _ready() -> void:
 	# Kết nối signal từ EventBus
