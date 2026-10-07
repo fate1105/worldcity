@@ -1,0 +1,11 @@
+{
+  "forest_fire": {"weight": 3, "terrain": ["forest"], "radius": 3, "effect": "ignite"},
+  "drought":     {"weight": 2, "duration_months": 3, "fertility_mod": -0.5},
+  "flood":       {"weight": 2, "terrain_near": ["shallow_water"], "building_damage": 0.3},
+  "storm":       {"weight": 3, "radius": 8, "building_damage": 0.1},
+  "earthquake":  {"weight": 1, "radius": 6, "building_damage": 0.6},
+  "epidemic":    {"weight": 2, "spread": 0.2, "lethality": 0.1},
+  "locusts":     {"weight": 1, "food_loss": 0.4, "duration_months": 2},
+  "monster":     {"weight": 1, "monster": "dragon"},
+  "comet":       {"weight": 0.2, "radius": 8, "building_damage": 1.0}
+}

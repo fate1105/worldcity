@@ -1,0 +1,18 @@
+{
+  "hardworking": {"type": "good", "work_mod": 0.2},
+  "smart": {"type": "good", "work_mod": 0.1, "tech_mod": 0.2},
+  "brave": {"type": "good", "attack_mod": 0.15, "flee_chance": -0.5},
+  "healthy": {"type": "good", "max_health_mod": 0.25, "disease_resist": 0.3},
+  "lucky": {"type": "good", "event_luck": 0.2},
+  "leader": {"type": "good", "kingdom_happiness": 2, "can_rule": true},
+  "lazy": {"type": "bad", "work_mod": -0.25},
+  "coward": {"type": "bad", "flee_chance": 0.5, "attack_mod": -0.1},
+  "sickly": {"type": "bad", "max_health_mod": -0.25, "disease_resist": -0.3},
+  "greedy": {"type": "bad", "tax_mod": 0.1, "happiness_mod": -5},
+  "aggressive": {"type": "bad", "attack_mod": 0.15, "war_chance": 0.1},
+  "unlucky": {"type": "bad", "event_luck": -0.2},
+  "mutated": {"type": "special", "attack_mod": 0.2, "max_health_mod": -0.1, "inherit_chance": 0.1},
+  "cursed": {"type": "special", "happiness_mod": -20, "work_mod": -0.15},
+  "blessed": {"type": "special", "happiness_mod": 15, "work_mod": 0.15, "disease_resist": 0.3},
+  "immortal": {"type": "special", "lifespan_mod": 99, "rarity": 0.001}
+}

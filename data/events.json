@@ -1,0 +1,22 @@
+{
+  "good_harvest":  {"type": "auto", "weight": 3, "effect": {"food_mult": 1.5}, "months": 2},
+  "ore_found":     {"type": "auto", "weight": 2, "effect": {"stone": 100, "ore": 30}},
+  "hero_born":     {"type": "auto", "weight": 1, "effect": {"add_trait": "leader"}},
+  "trade_caravan": {"type": "auto", "weight": 2, "effect": {"gold": 150}},
+  "tribute_demand": {
+    "type": "choice", "weight": 2,
+    "text_key": "EVT_TRIBUTE",
+    "choices": [
+      {"text_key": "EVT_TRIBUTE_PAY", "effect": {"gold": -100, "relation": 15}},
+      {"text_key": "EVT_TRIBUTE_REFUSE", "effect": {"relation": -25, "war_chance": 0.15}}
+    ]
+  },
+  "refugees": {
+    "type": "choice", "weight": 2,
+    "text_key": "EVT_REFUGEES",
+    "choices": [
+      {"text_key": "EVT_ACCEPT", "effect": {"population": 8, "food": -30}},
+      {"text_key": "EVT_REJECT", "effect": {"happiness": -3}}
+    ]
+  }
+}

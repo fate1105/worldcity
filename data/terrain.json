@@ -1,0 +1,12 @@
+{
+  "deep_water": {"id": 0, "walkable": false, "buildable": false, "move_cost": 0, "color": "#1b3a6b"},
+  "shallow_water": {"id": 1, "walkable": true, "buildable": false, "move_cost": 4, "color": "#2f6bb0", "resource": "fish"},
+  "sand": {"id": 2, "walkable": true, "buildable": true, "move_cost": 1.2, "fertility": 5, "color": "#e6d79a"},
+  "grass": {"id": 3, "walkable": true, "buildable": true, "move_cost": 1, "fertility": 80, "color": "#5da83a"},
+  "forest": {"id": 4, "walkable": true, "buildable": false, "move_cost": 2, "fertility": 50, "color": "#2d6a2d", "resource": "wood", "clear_to": "grass"},
+  "mountain": {"id": 5, "walkable": true, "buildable": false, "move_cost": 5, "color": "#7d7d7d", "resource": "stone"},
+  "snow": {"id": 6, "walkable": true, "buildable": true, "move_cost": 2, "fertility": 10, "color": "#f2f6fa", "happiness_mod": -10},
+  "desert": {"id": 7, "walkable": true, "buildable": true, "move_cost": 1.3, "fertility": 3, "color": "#d9b45a"},
+  "swamp": {"id": 8, "walkable": true, "buildable": false, "move_cost": 3, "fertility": 30, "color": "#4a5a2e", "disease_mod": 2.0},
+  "lava": {"id": 9, "walkable": false, "buildable": false, "move_cost": 0, "color": "#e0561a", "lethal": true}
+}

@@ -1,0 +1,14 @@
+{
+  "rain":      {"mana": 10, "radius": 4, "effect": "rain", "duration": 200, "fertility_gain": 10},
+  "lightning": {"mana": 15, "radius": 1, "effect": "damage", "damage": 50, "ignite": 0.3},
+  "fire":      {"mana": 10, "radius": 2, "effect": "ignite", "spread": 0.2},
+  "earthquake":{"mana": 40, "radius": 6, "effect": "quake", "building_damage": 0.7},
+  "volcano":   {"mana": 60, "radius": 5, "effect": "volcano", "lava_spread": 0.15},
+  "acid_bomb": {"mana": 30, "radius": 4, "effect": "acid", "mutate_chance": 0.1},
+  "bless":     {"mana": 20, "radius": 0, "effect": "add_trait", "trait": "blessed"},
+  "curse":     {"mana": 20, "radius": 0, "effect": "add_trait", "trait": "cursed"},
+  "revive":    {"mana": 50, "radius": 0, "effect": "revive"},
+  "plague":    {"mana": 35, "radius": 3, "effect": "disease", "spread": 0.25},
+  "dragon":    {"mana": 80, "radius": 0, "effect": "spawn_monster", "monster": "dragon"},
+  "nuke":      {"mana": 100, "radius": 12, "effect": "nuke", "radiation": true}
+}
