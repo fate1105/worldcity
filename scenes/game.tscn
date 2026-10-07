@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://game_scene_v1"]
+
+[ext_resource type="Script" path="res://scenes/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://src/view/camera_controller.gd" id="2_cam"]
+[ext_resource type="Script" path="res://src/view/world_view.gd" id="3_wv"]
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_game")
+
+[node name="CameraController" type="Camera2D" parent="."]
+script = ExtResource("2_cam")
+
+[node name="WorldView" type="Node2D" parent="."]
+script = ExtResource("3_wv")
+
+[node name="DebugOverlay" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="Panel" type="PanelContainer" parent="DebugOverlay"]
+anchors_preset = 0
+offset_right = 320.0
+offset_bottom = 56.0
+
+[node name="VBox" type="VBoxContainer" parent="DebugOverlay/Panel"]
+layout_mode = 2
+
+[node name="LabelFPS" type="Label" parent="DebugOverlay/Panel/VBox"]
+layout_mode = 2
+text = "FPS: --"
+theme_override_colors/font_color = Color(0.2, 1.0, 0.2, 1.0)
+
+[node name="LabelInfo" type="Label" parent="DebugOverlay/Panel/VBox"]
+layout_mode = 2
+text = "Map: --  |  Seed: --"
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1.0)
