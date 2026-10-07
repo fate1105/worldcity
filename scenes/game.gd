@@ -5,8 +5,8 @@ extends Node2D
 
 @onready var _camera: CameraController = $CameraController
 @onready var _world_view: WorldView = $WorldView
-@onready var _label_fps: Label = $DebugOverlay/LabelFPS
-@onready var _label_info: Label = $DebugOverlay/LabelInfo
+@onready var _label_fps: Label = $DebugOverlay/Panel/VBox/LabelFPS
+@onready var _label_info: Label = $DebugOverlay/Panel/VBox/LabelInfo
 
 const MAP_WIDTH: int = 128
 const MAP_HEIGHT: int = 128

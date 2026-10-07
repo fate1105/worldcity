@@ -82,9 +82,9 @@ func to_dict() -> Dictionary:
 	return {
 		"width": width,
 		"height": height,
-		"terrain": terrain.to_byte_array().hex_encode(),
-		"height_map": height_map.to_byte_array().hex_encode(),
-		"fertility": fertility.to_byte_array().hex_encode(),
+		"terrain": terrain.hex_encode(),
+		"height_map": height_map.hex_encode(),
+		"fertility": fertility.hex_encode(),
 	}
 
 ## Deserialize từ Dictionary
