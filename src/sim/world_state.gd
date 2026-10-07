@@ -17,6 +17,10 @@ var day: int = 1
 var month: int = 1
 var year: int = 1
 
+# Mana (God mode)
+var mana: float = 100.0
+var max_mana: float = 100.0
+
 func _init(width: int = 128, height: int = 128, seed_val: int = 0) -> void:
 	map_width = width
 	map_height = height

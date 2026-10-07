@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://src/view/camera_controller.gd" id="2_cam"]
 [ext_resource type="Script" path="res://src/view/world_view.gd" id="3_wv"]
 [ext_resource type="PackedScene" path="res://src/ui/hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" path="res://src/ui/toolbar.tscn" id="5_toolbar"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
@@ -16,13 +17,15 @@ script = ExtResource("3_wv")
 
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
 
+[node name="Toolbar" parent="." instance=ExtResource("5_toolbar")]
+
 [node name="DebugOverlay" type="CanvasLayer" parent="."]
 layer = 10
 
 [node name="Panel" type="PanelContainer" parent="DebugOverlay"]
 anchors_preset = 0
 offset_top = 56.0
-offset_right = 320.0
+offset_right = 360.0
 offset_bottom = 108.0
 
 [node name="VBox" type="VBoxContainer" parent="DebugOverlay/Panel"]
@@ -35,5 +38,5 @@ theme_override_colors/font_color = Color(0.2, 1.0, 0.2, 1.0)
 
 [node name="LabelInfo" type="Label" parent="DebugOverlay/Panel/VBox"]
 layout_mode = 2
-text = "Map: --  |  Seed: --"
+text = "Map: --"
 theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1.0)

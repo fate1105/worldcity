@@ -29,6 +29,7 @@ var power: PackedByteArray        # 0/1
 var water: PackedByteArray        # 0/1
 var pollution: PackedByteArray    # 0-255
 var happiness_map: PackedByteArray # 0-255
+var fire: PackedByteArray         # 0=không cháy, 1-200=thời gian cháy còn lại (ticks)
 
 func _init(w: int, h: int) -> void:
 	width = w
@@ -57,6 +58,8 @@ func _init(w: int, h: int) -> void:
 	happiness_map = PackedByteArray()
 	happiness_map.resize(size)
 	happiness_map.fill(50)
+	fire = PackedByteArray()
+	fire.resize(size)
 
 ## Chuyển (x, y) → index tuyến tính
 func idx(x: int, y: int) -> int:

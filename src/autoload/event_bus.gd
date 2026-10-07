@@ -9,6 +9,9 @@ signal day_passed(day: int, month: int, year: int)
 signal month_passed(month: int, year: int)
 signal year_passed(year: int)
 
+# --- Mana ---
+signal mana_changed(current: float, maximum: float)
+
 # --- Thế giới ---
 signal world_generated(seed_val: int)
 signal tile_changed(x: int, y: int)

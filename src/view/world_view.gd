@@ -6,7 +6,7 @@ const TILE_PX: int = 16
 ## Kích thước chunk (ô)
 const CHUNK_SIZE: int = 32
 
-## Màu placeholder cho từng loại ô (thay sprite ở Milestone 13)
+## Màu placeholder cho từng loại ô
 const TILE_COLORS: Array[Color] = [
 	Color(0.05, 0.15, 0.55),  # 0 DEEP_SEA
 	Color(0.15, 0.40, 0.80),  # 1 SHALLOW_SEA
@@ -20,15 +20,15 @@ const TILE_COLORS: Array[Color] = [
 	Color(0.95, 0.25, 0.05),  # 9 LAVA
 ]
 
+## Màu lửa overlay
+const FIRE_COLOR_HIGH: Color = Color(1.0, 0.35, 0.0, 0.85)
+const FIRE_COLOR_LOW:  Color = Color(1.0, 0.65, 0.0, 0.45)
+
 var _world_state: WorldState
 var _chunks_x: int
 var _chunks_y: int
-
-## Mỗi chunk là 1 Sprite2D hiển thị Image 32x32 được scale lên
 var _chunk_sprites: Array[Sprite2D] = []
-## Chunk nào cần vẽ lại
 var _dirty_chunks: PackedByteArray
-
 var _camera_ref: Camera2D
 
 func setup(world_state: WorldState, camera: Camera2D) -> void:
@@ -49,23 +49,27 @@ func setup(world_state: WorldState, camera: Camera2D) -> void:
 		var cy: int = ci / _chunks_x
 		var sprite := Sprite2D.new()
 		sprite.name = "Chunk_%d" % ci
-		# Sprite2D gốc ở tâm → dịch về góc trên-trái
 		sprite.centered = false
 		sprite.position = Vector2(cx * CHUNK_SIZE * TILE_PX, cy * CHUNK_SIZE * TILE_PX)
 		sprite.scale = Vector2(TILE_PX, TILE_PX)
-		# Tắt filter để pixel art giữ nét
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(sprite)
 		_chunk_sprites[ci] = sprite
 
+	# Lắng nghe signal tile_changed từ EventBus để đánh dirty chunk
+	EventBus.tile_changed.connect(_on_tile_changed)
+
 	_rebuild_all_chunks()
 
-## Đánh dấu chunk chứa toạ độ ô (tx, ty) cần vẽ lại
+## Đánh dirty chunk chứa toạ độ ô (tx, ty)
 func mark_dirty(tx: int, ty: int) -> void:
 	var cx: int = tx / CHUNK_SIZE
 	var cy: int = ty / CHUNK_SIZE
 	if cx < _chunks_x and cy < _chunks_y:
 		_dirty_chunks[cy * _chunks_x + cx] = 1
+
+func _on_tile_changed(tx: int, ty: int) -> void:
+	mark_dirty(tx, ty)
 
 func _process(_delta: float) -> void:
 	_flush_dirty_chunks()
@@ -81,7 +85,7 @@ func _rebuild_all_chunks() -> void:
 		_build_chunk(ci)
 		_dirty_chunks[ci] = 0
 
-## Vẽ chunk bằng Image 32x32 rồi gán làm ImageTexture cho Sprite2D
+## Vẽ chunk: terrain màu + overlay lửa
 func _build_chunk(chunk_idx: int) -> void:
 	var cx: int = chunk_idx % _chunks_x
 	var cy: int = chunk_idx / _chunks_x
@@ -99,8 +103,17 @@ func _build_chunk(chunk_idx: int) -> void:
 
 	for ty: int in range(start_y, end_y):
 		for tx: int in range(start_x, end_x):
-			var tile_type: int = grid.get_terrain(tx, ty)
+			var i: int = grid.idx(tx, ty)
+			var tile_type: int = grid.terrain[i]
 			var color: Color = TILE_COLORS[tile_type]
+
+			# Overlay lửa
+			var fire_val: int = grid.fire[i]
+			if fire_val > 0:
+				var intensity: float = clampf(float(fire_val) / 120.0, 0.0, 1.0)
+				var fire_color: Color = FIRE_COLOR_LOW.lerp(FIRE_COLOR_HIGH, intensity)
+				color = color.blend(fire_color)
+
 			img.set_pixel(tx - start_x, ty - start_y, color)
 
 	_chunk_sprites[chunk_idx].texture = ImageTexture.create_from_image(img)
