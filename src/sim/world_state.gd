@@ -14,6 +14,9 @@ var tile_grid: TileGrid
 # Tham chiếu đến tập dân cư
 var citizens: CitizenStore
 
+# Danh sách các công trình (Dictionary: id -> Building)
+var buildings: Dictionary = {}
+
 # Thời gian
 var tick: int = 0
 var day: int = 1
@@ -41,6 +44,7 @@ func to_dict() -> Dictionary:
 		"month": month,
 		"year": year,
 		"tile_grid": tile_grid.to_dict(),
+		# TODO: Lên kế hoạch lưu công trình sau
 	}
 
 static func from_dict(d: Dictionary) -> WorldState:

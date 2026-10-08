@@ -11,6 +11,7 @@ signal spawn_selected(race_id: int)
 signal brush_size_changed(size: int)
 signal select_tool_selected()
 signal road_tool_selected()
+signal zone_selected(zone_type: int)
 
 ## Màu nút terrain (khớp WorldView.TILE_COLORS)
 const TERRAIN_NAMES: Array[String] = [
@@ -40,15 +41,24 @@ var _brush_buttons: Array[Button] = []
 var _active_terrain: int = TileGrid.TileType.GRASS
 var _active_brush: int = 1
 
+@onready var _tab_bar: TabBar              = $BgPanel/VBox/TabBar
 @onready var _row_terrain: HBoxContainer = $BgPanel/VBox/RowTerrain
 @onready var _row_power: HBoxContainer   = $BgPanel/VBox/RowPower
 @onready var _row_spawn: HBoxContainer   = $BgPanel/VBox/RowSpawn
+@onready var _row_zone: HBoxContainer    = $BgPanel/VBox/RowZone
 
 func _ready() -> void:
 	_build_terrain_row()
 	_build_power_row()
 	_build_spawn_row()
+	_build_zone_row()
 	EventBus.mana_changed.connect(_on_mana_changed)
+	
+	_tab_bar.tab_clicked.connect(_on_tab_bar_tab_clicked)
+
+	_row_power.hide()
+	_row_spawn.hide()
+	_row_zone.hide()
 
 # ──────────────────────────────────────────────
 # Xây UI theo code (tránh lỗi node path)
@@ -164,9 +174,41 @@ func _build_spawn_row() -> void:
 		)
 		_row_spawn.add_child(btn)
 
+func _build_zone_row() -> void:
+	var lbl := Label.new()
+	lbl.text = "Quy hoạch:"
+	lbl.add_theme_font_size_override("font_size", 13)
+	_row_zone.add_child(lbl)
+
+	var zones := [
+		{"name": "Xoá", "type": 0, "color": Color.GRAY},
+		{"name": "Khu Dân cư", "type": 1, "color": Color.WEB_GREEN},
+		{"name": "Khu Thương mại", "type": 2, "color": Color.ROYAL_BLUE},
+		{"name": "Khu Công nghiệp", "type": 3, "color": Color.GOLDENROD}
+	]
+	for z in zones:
+		var btn := Button.new()
+		btn.text = z["name"]
+		btn.custom_minimum_size = Vector2(100, 36)
+		btn.add_theme_color_override("font_color", z["color"])
+		var z_type: int = z["type"]
+		btn.pressed.connect(func() -> void: zone_selected.emit(z_type))
+		_row_zone.add_child(btn)
+
 # ──────────────────────────────────────────────
 # Callbacks
 # ──────────────────────────────────────────────
+
+func _on_tab_bar_tab_clicked(tab: int) -> void:
+	_row_terrain.hide()
+	_row_power.hide()
+	_row_spawn.hide()
+	_row_zone.hide()
+	match tab:
+		0: _row_terrain.show()
+		1: _row_power.show()
+		2: _row_spawn.show()
+		3: _row_zone.show()
 
 func _on_terrain_pressed(terrain_type: int) -> void:
 	_active_terrain = terrain_type

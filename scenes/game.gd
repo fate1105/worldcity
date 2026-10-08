@@ -18,15 +18,17 @@ const TILE_PX: int    = 16  # phải khớp WorldView.TILE_PX
 var _world_state: WorldState
 var _power_system: PowerSystem
 var _citizen_system: CitizenSystem
+var _city_system: CitySystem
 var _pathfinding: PathfindingSystem
 var _rng: RandomNumberGenerator
 
 # --- Trạng thái công cụ ---
-enum ToolMode { SELECT, TERRAIN, POWER, SPAWN, ROAD }
+enum ToolMode { SELECT, TERRAIN, POWER, SPAWN, ROAD, ZONE }
 var _tool_mode: ToolMode   = ToolMode.SELECT
 var _active_terrain: int   = TileGrid.TileType.GRASS
 var _active_power: String  = ""
 var _active_race: int      = 0
+var _active_zone: int      = 0
 var _brush_size: int       = 1
 var _mouse_held: bool      = false
 
@@ -50,6 +52,7 @@ func _ready() -> void:
 	# PowerSystem & CitizenSystem
 	_power_system = PowerSystem.new(_rng)
 	_citizen_system = CitizenSystem.new(_rng)
+	_city_system = CitySystem.new(_rng)
 	_pathfinding = PathfindingSystem.new(_world_state)
 
 	# Đồng bộ clock
@@ -76,6 +79,8 @@ func _ready() -> void:
 		_toolbar.select_tool_selected.connect(_on_select_tool)
 	if _toolbar.has_signal("road_tool_selected"):
 		_toolbar.road_tool_selected.connect(_on_road_tool)
+	if _toolbar.has_signal("zone_selected"):
+		_toolbar.zone_selected.connect(_on_zone_selected)
 
 	# Clock signals
 	EventBus.tick_happened.connect(_on_tick)
@@ -102,6 +107,7 @@ func _on_day_passed(_day: int, _month: int, _year: int) -> void:
 	# Lửa lan mỗi ngày
 	_power_system.process_fire(_world_state.tile_grid)
 	_citizen_system.process_day(_world_state)
+	_city_system.process_day(_world_state)
 	# Đánh dirty toàn bộ chunk chứa lửa (WorldView tự kiểm tra)
 	_mark_fire_dirty()
 
@@ -163,6 +169,8 @@ func _apply_tool_at(screen_pos: Vector2) -> void:
 			_spawn_citizen(tile_pos.x, tile_pos.y)
 		ToolMode.ROAD:
 			_paint_road(tile_pos.x, tile_pos.y)
+		ToolMode.ZONE:
+			_paint_zone(tile_pos.x, tile_pos.y)
 
 func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * screen_pos
@@ -212,6 +220,16 @@ func _paint_road(tx: int, ty: int) -> void:
 	_world_view.mark_dirty(tx, ty)
 	EventBus.tile_changed.emit(tx, ty)
 
+func _paint_zone(tx: int, ty: int) -> void:
+	var grid: TileGrid = _world_state.tile_grid
+	var r: int = int(_brush_size / 2.0)
+	for y: int in range(ty - r, ty + r + 1):
+		for x: int in range(tx - r, tx + r + 1):
+			if grid.in_bounds(x, y):
+				grid.zone[grid.idx(x, y)] = _active_zone
+				_world_view.mark_dirty(x, y)
+				EventBus.tile_changed.emit(x, y)
+
 # ──────────────────────────────────────────────
 # Toolbar callbacks
 # ──────────────────────────────────────────────
@@ -221,6 +239,10 @@ func _on_select_tool() -> void:
 
 func _on_road_tool() -> void:
 	_tool_mode = ToolMode.ROAD
+
+func _on_zone_selected(z: int) -> void:
+	_active_zone = z
+	_tool_mode = ToolMode.ZONE
 
 func _on_terrain_selected(terrain_type: int) -> void:
 	_active_terrain = terrain_type
@@ -259,6 +281,8 @@ func _get_tool_label() -> String:
 			return "Trỏ (Xem TT)"
 		ToolMode.ROAD:
 			return "Đường xá"
+		ToolMode.ZONE:
+			return "Quy hoạch [%dx%d]" % [_brush_size, _brush_size]
 		ToolMode.TERRAIN:
 			return "Địa hình [%dx%d]" % [_brush_size, _brush_size]
 		ToolMode.POWER:

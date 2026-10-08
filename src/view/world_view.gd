@@ -25,6 +25,13 @@ const FIRE_COLOR_HIGH: Color = Color(1.0, 0.35, 0.0, 0.85)
 const FIRE_COLOR_LOW:  Color = Color(1.0, 0.65, 0.0, 0.45)
 const ROAD_COLOR: Color = Color(0.25, 0.25, 0.25)
 
+const ZONE_COLORS: Array[Color] = [
+	Color.TRANSPARENT,
+	Color(0.0, 1.0, 0.0, 0.3), # R
+	Color(0.0, 0.2, 1.0, 0.3), # C
+	Color(1.0, 0.8, 0.0, 0.3)  # I
+]
+
 var _world_state: WorldState
 var _chunks_x: int
 var _chunks_y: int
@@ -108,9 +115,28 @@ func _build_chunk(chunk_idx: int) -> void:
 			var tile_type: int = grid.terrain[i]
 			var color: Color = TILE_COLORS[tile_type]
 
-			# Overlay đường xá
-			if grid.road[i] > 0:
-				color = color.blend(ROAD_COLOR.lerp(Color.TRANSPARENT, 0.3))
+			# Công trình (Building)
+			var b_id: int = grid.building_id[i]
+			if b_id > 0 and _world_state.buildings.has(b_id):
+				var b: Building = _world_state.buildings[b_id]
+				if b.type.begins_with("house"):
+					color = Color(0.2, 0.6, 0.2)
+				elif b.type == "market" or b.type.begins_with("shop"):
+					color = Color(0.2, 0.2, 0.8)
+				else:
+					color = Color(0.8, 0.6, 0.1) # Farm, industry
+				# Vẽ viền nếu là góc trên trái
+				if cx == b.x and cy == b.y:
+					color = color.lightened(0.2)
+			else:
+				# Overlay đường xá
+				if grid.road[i] > 0:
+					color = color.blend(ROAD_COLOR.lerp(Color.TRANSPARENT, 0.3))
+
+				# Overlay quy hoạch (Zone) - chỉ hiện khi chưa có nhà
+				var z: int = grid.zone[i]
+				if z > 0:
+					color = color.blend(ZONE_COLORS[z])
 
 			# Overlay lửa
 			var fire_val: int = grid.fire[i]
