@@ -23,9 +23,7 @@ signal tile_changed(x: int, y: int)
 # --- Tốc độ ---
 signal speed_changed(new_speed: int)  # 0=pause, 1, 2, 5
 
-# --- Dân cư (dùng từ Milestone 4) ---
-signal citizen_spawned(citizen_id: int)
-signal citizen_died(citizen_id: int)
+
 
 # --- Công trình (dùng từ Milestone 6) ---
 signal building_placed(building_id: int, x: int, y: int)
