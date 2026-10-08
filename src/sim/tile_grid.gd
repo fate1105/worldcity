@@ -15,6 +15,8 @@ enum TileType {
 	LAVA        = 9,
 }
 
+enum ZoneType { NONE = 0, R = 1, C = 2, I = 3 }
+
 var width: int
 var height: int
 
