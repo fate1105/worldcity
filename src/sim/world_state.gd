@@ -11,6 +11,9 @@ var rng_seed: int = 0
 # Tham chiếu đến lưới ô
 var tile_grid: TileGrid
 
+# Tham chiếu đến tập dân cư
+var citizens: CitizenStore
+
 # Thời gian
 var tick: int = 0
 var day: int = 1
@@ -26,6 +29,7 @@ func _init(width: int = 128, height: int = 128, seed_val: int = 0) -> void:
 	map_height = height
 	rng_seed = seed_val
 	tile_grid = TileGrid.new(width, height)
+	citizens = CitizenStore.new()
 
 func to_dict() -> Dictionary:
 	return {

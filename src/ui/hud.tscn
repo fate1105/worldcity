@@ -58,3 +58,33 @@ layout_mode = 2
 custom_minimum_size = Vector2(52, 36)
 text = "⏩ x5"
 theme_override_font_sizes/font_size = 14
+
+[node name="PanelInfo" type="PanelContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -200.0
+offset_top = 60.0
+offset_right = -10.0
+offset_bottom = 180.0
+grow_horizontal = 0
+
+[node name="VBox" type="VBoxContainer" parent="PanelInfo"]
+layout_mode = 2
+
+[node name="LabelTitle" type="Label" parent="PanelInfo/VBox"]
+layout_mode = 2
+text = "Thông tin Cư dân"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="PanelInfo/VBox"]
+layout_mode = 2
+
+[node name="LabelStats" type="Label" parent="PanelInfo/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Tuổi: --
+Đói: --
+Hạnh phúc: --"

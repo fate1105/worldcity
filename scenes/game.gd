@@ -17,13 +17,15 @@ const TILE_PX: int    = 16  # phải khớp WorldView.TILE_PX
 
 var _world_state: WorldState
 var _power_system: PowerSystem
+var _citizen_system: CitizenSystem
 var _rng: RandomNumberGenerator
 
 # --- Trạng thái công cụ ---
-enum ToolMode { NONE, TERRAIN, POWER }
-var _tool_mode: ToolMode   = ToolMode.TERRAIN
+enum ToolMode { SELECT, TERRAIN, POWER, SPAWN }
+var _tool_mode: ToolMode   = ToolMode.SELECT
 var _active_terrain: int   = TileGrid.TileType.GRASS
 var _active_power: String  = ""
+var _active_race: int      = 0
 var _brush_size: int       = 1
 var _mouse_held: bool      = false
 
@@ -44,26 +46,37 @@ func _ready() -> void:
 	_world_state.mana     = _world_state.max_mana
 	WorldGen.generate(_world_state, seed_val)
 
-	# PowerSystem
+	# PowerSystem & CitizenSystem
 	_power_system = PowerSystem.new(_rng)
+	_citizen_system = CitizenSystem.new(_rng)
 
 	# Đồng bộ clock
 	GameClock.sync_from_world(_world_state)
 
-	# Camera
+	# Camera & View
 	_camera.setup_limits(MAP_WIDTH, MAP_HEIGHT, TILE_PX)
-
-	# WorldView
 	_world_view.setup(_world_state, _camera)
+
+	var renderer := $CitizenRenderer as CitizenRenderer
+	if renderer:
+		renderer.setup(_world_state.citizens)
+
+	var hud := $HUD
+	if hud.has_method("set_world_state"):
+		hud.set_world_state(_world_state)
 
 	# Toolbar signals
 	_toolbar.terrain_selected.connect(_on_terrain_selected)
 	_toolbar.power_selected.connect(_on_power_selected)
+	_toolbar.spawn_selected.connect(_on_spawn_selected)
 	_toolbar.brush_size_changed.connect(_on_brush_size_changed)
+	if _toolbar.has_signal("select_tool_selected"):
+		_toolbar.select_tool_selected.connect(_on_select_tool)
 
 	# Clock signals
 	EventBus.tick_happened.connect(_on_tick)
 	EventBus.day_passed.connect(_on_day_passed)
+	EventBus.month_passed.connect(_on_month_passed)
 
 	# Phát mana ban đầu lên HUD
 	EventBus.mana_changed.emit(_world_state.mana, _world_state.max_mana)
@@ -78,12 +91,17 @@ func _on_tick(_tick_num: int) -> void:
 	# Hồi mana theo delta thực (dùng physics delta ≈ 1/tick_rate)
 	var delta: float = 1.0 / float(GameClock.TICKS_PER_SECOND)
 	_power_system.tick_mana(_world_state, delta * float(GameClock.speed))
+	_citizen_system.tick(_world_state)
 
 func _on_day_passed(_day: int, _month: int, _year: int) -> void:
 	# Lửa lan mỗi ngày
 	_power_system.process_fire(_world_state.tile_grid)
+	_citizen_system.process_day(_world_state)
 	# Đánh dirty toàn bộ chunk chứa lửa (WorldView tự kiểm tra)
 	_mark_fire_dirty()
+
+func _on_month_passed(_month: int, _year: int) -> void:
+	_citizen_system.process_month(_world_state)
 
 func _mark_fire_dirty() -> void:
 	var grid: TileGrid = _world_state.tile_grid
@@ -130,10 +148,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _apply_tool_at(screen_pos: Vector2) -> void:
 	var tile_pos: Vector2i = _screen_to_tile(screen_pos)
 	match _tool_mode:
+		ToolMode.SELECT:
+			_select_citizen(tile_pos.x, tile_pos.y)
 		ToolMode.TERRAIN:
 			_paint_terrain(tile_pos.x, tile_pos.y)
 		ToolMode.POWER:
 			_use_power(tile_pos.x, tile_pos.y)
+		ToolMode.SPAWN:
+			_spawn_citizen(tile_pos.x, tile_pos.y)
 
 func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * screen_pos
@@ -157,9 +179,25 @@ func _use_power(tx: int, ty: int) -> void:
 		return
 	_power_system.apply_power(_active_power, tx, ty, _world_state)
 
+func _spawn_citizen(tx: int, ty: int) -> void:
+	var grid: TileGrid = _world_state.tile_grid
+	if not grid.in_bounds(tx, ty): return
+	var t: int = grid.terrain[grid.idx(tx, ty)]
+	if t <= 1: return # Không đẻ dưới nước
+	_world_state.citizens.spawn(float(tx) + 0.5, float(ty) + 0.5, _active_race)
+
+func _select_citizen(tx: float, ty: float) -> void:
+	var cid: int = _world_state.citizens.get_closest(tx, ty, 3.0)
+	var hud := $HUD
+	if hud.has_method("track_citizen"):
+		hud.track_citizen(cid)
+
 # ──────────────────────────────────────────────
 # Toolbar callbacks
 # ──────────────────────────────────────────────
+
+func _on_select_tool() -> void:
+	_tool_mode = ToolMode.SELECT
 
 func _on_terrain_selected(terrain_type: int) -> void:
 	_active_terrain = terrain_type
@@ -169,6 +207,10 @@ func _on_power_selected(power_id: String) -> void:
 	_active_power = power_id
 	_tool_mode = ToolMode.POWER
 
+func _on_spawn_selected(race_id: int) -> void:
+	_active_race = race_id
+	_tool_mode = ToolMode.SPAWN
+
 func _on_brush_size_changed(size: int) -> void:
 	_brush_size = size
 
@@ -177,10 +219,11 @@ func _on_brush_size_changed(size: int) -> void:
 # ──────────────────────────────────────────────
 
 func _process(_delta: float) -> void:
-	_label_fps.text = "FPS: %d  |  Tick: %d  |  Mana: %d" % [
+	_label_fps.text = "FPS: %d  |  Tick: %d  |  Mana: %d  |  Dân: %d" % [
 		Engine.get_frames_per_second(),
 		GameClock.tick,
-		int(_world_state.mana)
+		int(_world_state.mana),
+		_world_state.citizens.count
 	]
 	_label_info.text = "Map: %dx%d  |  Seed: %d  |  Tool: %s" % [
 		MAP_WIDTH, MAP_HEIGHT, _world_state.rng_seed,
@@ -189,8 +232,12 @@ func _process(_delta: float) -> void:
 
 func _get_tool_label() -> String:
 	match _tool_mode:
+		ToolMode.SELECT:
+			return "Trỏ (Xem TT)"
 		ToolMode.TERRAIN:
 			return "Địa hình [%dx%d]" % [_brush_size, _brush_size]
 		ToolMode.POWER:
 			return "Quyền năng: %s" % _active_power
+		ToolMode.SPAWN:
+			return "Sinh vật: Loài %d" % _active_race
 	return "Không"

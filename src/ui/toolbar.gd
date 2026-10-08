@@ -7,7 +7,9 @@ extends CanvasLayer
 ## Signal phát khi người dùng chọn công cụ
 signal terrain_selected(terrain_type: int)
 signal power_selected(power_id: String)
+signal spawn_selected(race_id: int)
 signal brush_size_changed(size: int)
+signal select_tool_selected()
 
 ## Màu nút terrain (khớp WorldView.TILE_COLORS)
 const TERRAIN_NAMES: Array[String] = [
@@ -39,10 +41,12 @@ var _active_brush: int = 1
 
 @onready var _row_terrain: HBoxContainer = $BgPanel/VBox/RowTerrain
 @onready var _row_power: HBoxContainer   = $BgPanel/VBox/RowPower
+@onready var _row_spawn: HBoxContainer   = $BgPanel/VBox/RowSpawn
 
 func _ready() -> void:
 	_build_terrain_row()
 	_build_power_row()
+	_build_spawn_row()
 	EventBus.mana_changed.connect(_on_mana_changed)
 
 # ──────────────────────────────────────────────
@@ -50,6 +54,13 @@ func _ready() -> void:
 # ──────────────────────────────────────────────
 
 func _build_terrain_row() -> void:
+	# Nút Trỏ (Select)
+	var btn_select := Button.new()
+	btn_select.text = "Trỏ"
+	btn_select.custom_minimum_size = Vector2(44, 36)
+	btn_select.pressed.connect(func() -> void: select_tool_selected.emit())
+	_row_terrain.add_child(btn_select)
+
 	# Label
 	var lbl := Label.new()
 	lbl.text = "Địa hình:"
@@ -125,6 +136,25 @@ func _build_power_row() -> void:
 	_label_mana.text = "✦ Mana: 100 / 100"
 	_label_mana.add_theme_font_size_override("font_size", 14)
 	_row_power.add_child(_label_mana)
+
+func _build_spawn_row() -> void:
+	var lbl := Label.new()
+	lbl.text = "Sinh vật:"
+	lbl.add_theme_font_size_override("font_size", 13)
+	_row_spawn.add_child(lbl)
+
+	var races := ["Người (Human)", "Tiên (Elf)", "Orc", "Người lùn (Dwarf)"]
+	var colors := [Color.SKY_BLUE, Color.LIGHT_GREEN, Color.INDIAN_RED, Color.SANDY_BROWN]
+	for i: int in range(races.size()):
+		var btn := Button.new()
+		btn.text = races[i]
+		btn.custom_minimum_size = Vector2(100, 36)
+		btn.add_theme_color_override("font_color", colors[i])
+		var r_id: int = i
+		btn.pressed.connect(func() -> void:
+			spawn_selected.emit(r_id)
+		)
+		_row_spawn.add_child(btn)
 
 # ──────────────────────────────────────────────
 # Callbacks

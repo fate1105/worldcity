@@ -12,6 +12,10 @@ signal year_passed(year: int)
 # --- Mana ---
 signal mana_changed(current: float, maximum: float)
 
+# --- Cư dân ---
+signal citizen_spawned(id: int)
+signal citizen_died(id: int)
+
 # --- Thế giới ---
 signal world_generated(seed_val: int)
 signal tile_changed(x: int, y: int)

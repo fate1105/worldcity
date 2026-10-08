@@ -9,6 +9,13 @@ extends CanvasLayer
 @onready var _btn_2x: Button        = $TopBar/HBoxMain/HBoxSpeed/Btn2x
 @onready var _btn_5x: Button        = $TopBar/HBoxMain/HBoxSpeed/Btn5x
 
+@onready var _panel_info: PanelContainer = $PanelInfo
+@onready var _label_title: Label         = $PanelInfo/VBox/LabelTitle
+@onready var _label_stats: Label         = $PanelInfo/VBox/LabelStats
+
+var _tracked_citizen_id: int = -1
+var _world_state_ref: WorldState
+
 func _ready() -> void:
 	# Kết nối signal từ EventBus
 	EventBus.day_passed.connect(_on_day_passed)
@@ -23,6 +30,40 @@ func _ready() -> void:
 	# Hiển thị trạng thái ban đầu
 	_refresh_time(GameClock.day, GameClock.month, GameClock.year)
 	_highlight_speed(GameClock.speed)
+
+	_panel_info.hide()
+
+func set_world_state(ws: WorldState) -> void:
+	_world_state_ref = ws
+
+func _process(_delta: float) -> void:
+	if _tracked_citizen_id != -1 and _world_state_ref:
+		_update_citizen_info()
+
+func track_citizen(id: int) -> void:
+	_tracked_citizen_id = id
+	if id == -1:
+		_panel_info.hide()
+	else:
+		_panel_info.show()
+		_update_citizen_info()
+
+func _update_citizen_info() -> void:
+	var store := _world_state_ref.citizens
+	var id := _tracked_citizen_id
+	if store.alive[id] == 0:
+		_panel_info.hide()
+		_tracked_citizen_id = -1
+		return
+
+	var races := ["Người", "Tiên", "Orc", "Lùn"]
+	var r := store.race_id[id]
+	_label_title.text = "Cư dân #%d (%s)" % [id, races[r] if r < races.size() else "???"]
+	_label_stats.text = "Tuổi: %d tháng\nĐói: %d/100\nHạnh phúc: %d/100" % [
+		store.age[id],
+		store.hunger[id],
+		store.happiness[id]
+	]
 
 func _on_day_passed(day: int, month: int, year: int) -> void:
 	_refresh_time(day, month, year)
