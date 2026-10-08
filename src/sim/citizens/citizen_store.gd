@@ -17,6 +17,9 @@ var race_id: PackedByteArray     # map sang DataDB (0: human, 1: elf...)
 var kingdom_id: PackedInt32Array
 var state: PackedByteArray       # AIState
 
+var paths: Array                 # Array[Array[Vector2i]]
+var path_idx: PackedInt32Array
+
 var _free_list: PackedInt32Array
 
 func _init() -> void:
@@ -38,6 +41,13 @@ func _init() -> void:
 	kingdom_id.resize(MAX_CITIZENS)
 	state = PackedByteArray()
 	state.resize(MAX_CITIZENS)
+
+	paths = []
+	paths.resize(MAX_CITIZENS)
+	for i: int in range(MAX_CITIZENS):
+		paths[i] = []
+	path_idx = PackedInt32Array()
+	path_idx.resize(MAX_CITIZENS)
 
 	_free_list = PackedInt32Array()
 	# Điền free list từ N-1 về 0 để pop ra từ cuối
@@ -62,6 +72,8 @@ func spawn(x: float, y: float, race: int) -> int:
 	race_id[id] = race
 	kingdom_id[id] = -1
 	state[id] = 0 # IDLE
+	paths[id] = []
+	path_idx[id] = 0
 
 	count += 1
 	EventBus.citizen_spawned.emit(id)
@@ -87,5 +99,15 @@ func get_closest(x: float, y: float, max_dist: float = 2.0) -> int:
 			var dist2: float = dx * dx + dy * dy
 			if dist2 < best_dist2:
 				best_dist2 = dist2
-				best_id = id
 	return best_id
+
+## Gắn đường đi cho công dân
+func set_path(id: int, p: Array[Vector2i]) -> void:
+	if id >= 0 and id < MAX_CITIZENS and alive[id] == 1:
+		paths[id] = p
+		path_idx[id] = 0
+		# Nếu có đường đi, chuyển sang trạng thái WANDER (1)
+		if p.size() > 0:
+			state[id] = 1 # WANDER
+		else:
+			state[id] = 0 # IDLE

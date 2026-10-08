@@ -23,6 +23,7 @@ const TILE_COLORS: Array[Color] = [
 ## Màu lửa overlay
 const FIRE_COLOR_HIGH: Color = Color(1.0, 0.35, 0.0, 0.85)
 const FIRE_COLOR_LOW:  Color = Color(1.0, 0.65, 0.0, 0.45)
+const ROAD_COLOR: Color = Color(0.25, 0.25, 0.25)
 
 var _world_state: WorldState
 var _chunks_x: int
@@ -106,6 +107,10 @@ func _build_chunk(chunk_idx: int) -> void:
 			var i: int = grid.idx(tx, ty)
 			var tile_type: int = grid.terrain[i]
 			var color: Color = TILE_COLORS[tile_type]
+
+			# Overlay đường xá
+			if grid.road[i] > 0:
+				color = color.blend(ROAD_COLOR.lerp(Color.TRANSPARENT, 0.3))
 
 			# Overlay lửa
 			var fire_val: int = grid.fire[i]

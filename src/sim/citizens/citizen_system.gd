@@ -3,21 +3,15 @@ extends RefCounted
 
 ## Xử lý logic của cư dân (AI đi lại, đói bụng, sinh lão bệnh tử)
 
-enum AIState { IDLE, WANDER, DEAD }
+enum AIState { IDLE, WANDER, WAITING_PATH, DEAD }
 
 var _rng: RandomNumberGenerator
-var _dest_x: PackedFloat32Array
-var _dest_y: PackedFloat32Array
 
 func _init(rng: RandomNumberGenerator) -> void:
 	_rng = rng
-	_dest_x = PackedFloat32Array()
-	_dest_y = PackedFloat32Array()
-	_dest_x.resize(CitizenStore.MAX_CITIZENS)
-	_dest_y.resize(CitizenStore.MAX_CITIZENS)
 
 ## Gọi mỗi tick (10 lần/giây)
-func tick(world_state: WorldState) -> void:
+func tick(world_state: WorldState, pathfinding: PathfindingSystem) -> void:
 	var store: CitizenStore = world_state.citizens
 	var grid: TileGrid = world_state.tile_grid
 	var move_speed: float = 2.0  # units per tick (1 unit = 1 tile width)
@@ -31,36 +25,50 @@ func tick(world_state: WorldState) -> void:
 			AIState.IDLE:
 				# Ngẫu nhiên đi loanh quanh
 				if _rng.randf() < 0.05:
-					# Tìm điểm đến gần đó (bán kính 5 ô)
-					var dx: float = _rng.randf_range(-5.0, 5.0)
-					var dy: float = _rng.randf_range(-5.0, 5.0)
-					var nx: float = clampf(store.pos_x[id] + dx, 0, grid.width - 1)
-					var ny: float = clampf(store.pos_y[id] + dy, 0, grid.height - 1)
+					# Tìm điểm đến gần đó (bán kính 5-10 ô)
+					var dx: float = _rng.randf_range(-10.0, 10.0)
+					var dy: float = _rng.randf_range(-10.0, 10.0)
+					var nx: int = clampi(int(store.pos_x[id] + dx), 0, grid.width - 1)
+					var ny: int = clampi(int(store.pos_y[id] + dy), 0, grid.height - 1)
 
 					# Đảm bảo không bơi ra biển sâu/biển nông
-					var t_idx: int = grid.idx(int(nx), int(ny))
+					var t_idx: int = grid.idx(nx, ny)
 					if grid.terrain[t_idx] > 1:
-						_dest_x[id] = nx
-						_dest_y[id] = ny
-						store.state[id] = AIState.WANDER
+						pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
+						store.state[id] = AIState.WAITING_PATH
 
 			AIState.WANDER:
+				var path: Array = store.paths[id]
+				var p_idx: int = store.path_idx[id]
+				if p_idx >= path.size():
+					store.state[id] = AIState.IDLE
+					continue
+
 				var cx: float = store.pos_x[id]
 				var cy: float = store.pos_y[id]
-				var tx: float = _dest_x[id]
-				var ty: float = _dest_y[id]
+				var target: Vector2i = path[p_idx]
+				var tx: float = target.x + 0.5
+				var ty: float = target.y + 0.5
 
-				var dx: float = tx - cx
-				var dy: float = ty - cy
-				var dist: float = sqrt(dx * dx + dy * dy)
+				var t_dx: float = tx - cx
+				var t_dy: float = ty - cy
+				var dist: float = sqrt(t_dx * t_dx + t_dy * t_dy)
 
-				if dist < 0.5:
-					store.state[id] = AIState.IDLE
+				# Tốc độ đi tuỳ thuộc vào việc có đứng trên đường không
+				var current_grid_idx: int = grid.idx(int(cx), int(cy))
+				var is_on_road: bool = grid.road[current_grid_idx] > 0
+				var actual_speed: float = move_speed * (2.0 if is_on_road else 1.0)
+
+				if dist < 0.2:
+					store.path_idx[id] += 1
 				else:
-					var vx: float = (dx / dist) * move_speed * 0.1 # delta tĩnh
-					var vy: float = (dy / dist) * move_speed * 0.1
+					var vx: float = (t_dx / dist) * actual_speed * 0.1 # delta tĩnh
+					var vy: float = (t_dy / dist) * actual_speed * 0.1
 					store.pos_x[id] = cx + vx
 					store.pos_y[id] = cy + vy
+
+			AIState.WAITING_PATH:
+				pass # PathfindingSystem sẽ tự gọi store.set_path() để đổi state sang WANDER hoặc IDLE
 
 ## Gọi mỗi ngày (100 tick)
 func process_day(world_state: WorldState) -> void:

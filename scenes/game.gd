@@ -18,10 +18,11 @@ const TILE_PX: int    = 16  # phải khớp WorldView.TILE_PX
 var _world_state: WorldState
 var _power_system: PowerSystem
 var _citizen_system: CitizenSystem
+var _pathfinding: PathfindingSystem
 var _rng: RandomNumberGenerator
 
 # --- Trạng thái công cụ ---
-enum ToolMode { SELECT, TERRAIN, POWER, SPAWN }
+enum ToolMode { SELECT, TERRAIN, POWER, SPAWN, ROAD }
 var _tool_mode: ToolMode   = ToolMode.SELECT
 var _active_terrain: int   = TileGrid.TileType.GRASS
 var _active_power: String  = ""
@@ -49,6 +50,7 @@ func _ready() -> void:
 	# PowerSystem & CitizenSystem
 	_power_system = PowerSystem.new(_rng)
 	_citizen_system = CitizenSystem.new(_rng)
+	_pathfinding = PathfindingSystem.new(_world_state)
 
 	# Đồng bộ clock
 	GameClock.sync_from_world(_world_state)
@@ -72,6 +74,8 @@ func _ready() -> void:
 	_toolbar.brush_size_changed.connect(_on_brush_size_changed)
 	if _toolbar.has_signal("select_tool_selected"):
 		_toolbar.select_tool_selected.connect(_on_select_tool)
+	if _toolbar.has_signal("road_tool_selected"):
+		_toolbar.road_tool_selected.connect(_on_road_tool)
 
 	# Clock signals
 	EventBus.tick_happened.connect(_on_tick)
@@ -91,7 +95,8 @@ func _on_tick(_tick_num: int) -> void:
 	# Hồi mana theo delta thực (dùng physics delta ≈ 1/tick_rate)
 	var delta: float = 1.0 / float(GameClock.TICKS_PER_SECOND)
 	_power_system.tick_mana(_world_state, delta * float(GameClock.speed))
-	_citizen_system.tick(_world_state)
+	_pathfinding.process_queue(DataDB.balance("perf").get("path_requests_per_tick", 20))
+	_citizen_system.tick(_world_state, _pathfinding)
 
 func _on_day_passed(_day: int, _month: int, _year: int) -> void:
 	# Lửa lan mỗi ngày
@@ -156,6 +161,8 @@ func _apply_tool_at(screen_pos: Vector2) -> void:
 			_use_power(tile_pos.x, tile_pos.y)
 		ToolMode.SPAWN:
 			_spawn_citizen(tile_pos.x, tile_pos.y)
+		ToolMode.ROAD:
+			_paint_road(tile_pos.x, tile_pos.y)
 
 func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * screen_pos
@@ -192,12 +199,28 @@ func _select_citizen(tx: float, ty: float) -> void:
 	if hud.has_method("track_citizen"):
 		hud.track_citizen(cid)
 
+func _paint_road(tx: int, ty: int) -> void:
+	var grid: TileGrid = _world_state.tile_grid
+	if not grid.in_bounds(tx, ty): return
+	var t: int = grid.terrain[grid.idx(tx, ty)]
+	if t <= 1 or t == 5 or t == 9: return # Không xây đường trên biển, núi, dung nham
+	var i: int = grid.idx(tx, ty)
+	# Nếu click phải thì xoá đường, nhưng giờ chỉ có nút trái (mặc định tô)
+	# Hoặc toggle? Ta làm toggle cho nhanh:
+	if grid.road[i] == 0:
+		grid.road[i] = 1
+	_world_view.mark_dirty(tx, ty)
+	EventBus.tile_changed.emit(tx, ty)
+
 # ──────────────────────────────────────────────
 # Toolbar callbacks
 # ──────────────────────────────────────────────
 
 func _on_select_tool() -> void:
 	_tool_mode = ToolMode.SELECT
+
+func _on_road_tool() -> void:
+	_tool_mode = ToolMode.ROAD
 
 func _on_terrain_selected(terrain_type: int) -> void:
 	_active_terrain = terrain_type
@@ -234,6 +257,8 @@ func _get_tool_label() -> String:
 	match _tool_mode:
 		ToolMode.SELECT:
 			return "Trỏ (Xem TT)"
+		ToolMode.ROAD:
+			return "Đường xá"
 		ToolMode.TERRAIN:
 			return "Địa hình [%dx%d]" % [_brush_size, _brush_size]
 		ToolMode.POWER:

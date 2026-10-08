@@ -10,6 +10,7 @@ signal power_selected(power_id: String)
 signal spawn_selected(race_id: int)
 signal brush_size_changed(size: int)
 signal select_tool_selected()
+signal road_tool_selected()
 
 ## Màu nút terrain (khớp WorldView.TILE_COLORS)
 const TERRAIN_NAMES: Array[String] = [
@@ -60,6 +61,13 @@ func _build_terrain_row() -> void:
 	btn_select.custom_minimum_size = Vector2(44, 36)
 	btn_select.pressed.connect(func() -> void: select_tool_selected.emit())
 	_row_terrain.add_child(btn_select)
+
+	# Nút Đường (Road)
+	var btn_road := Button.new()
+	btn_road.text = "Đường"
+	btn_road.custom_minimum_size = Vector2(60, 36)
+	btn_road.pressed.connect(func() -> void: road_tool_selected.emit())
+	_row_terrain.add_child(btn_road)
 
 	# Label
 	var lbl := Label.new()
