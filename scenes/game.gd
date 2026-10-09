@@ -86,6 +86,8 @@ func _ready() -> void:
 	EventBus.tick_happened.connect(_on_tick)
 	EventBus.day_passed.connect(_on_day_passed)
 	EventBus.month_passed.connect(_on_month_passed)
+	
+	EventBus.tile_changed.connect(func(tx: int, ty: int) -> void: _world_view.mark_dirty(tx, ty))
 
 	# Phát mana ban đầu lên HUD
 	EventBus.mana_changed.emit(_world_state.mana, _world_state.max_mana)
@@ -176,30 +178,25 @@ func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * screen_pos
 	return Vector2i(int(world_pos.x / TILE_PX), int(world_pos.y / TILE_PX))
 
+func _execute_command(cmd: Command) -> void:
+	if cmd.validate(_world_state):
+		cmd.execute(_world_state)
+		# Nếu là tool thay đổi tile, _world_view.mark_dirty được gọi ở đâu?
+		# EventBus.tile_changed sẽ được _world_view lắng nghe,
+		# nhưng hiện tại _world_view chỉ có hàm mark_dirty. 
+		# Ta sẽ gọi mark_dirty(tx, ty) khi nhận event tile_changed!
+
 func _paint_terrain(cx: int, cy: int) -> void:
-	var half: int = _brush_size / 2
-	var grid: TileGrid = _world_state.tile_grid
-	for dy: int in range(-half, half + 1):
-		for dx: int in range(-half, half + 1):
-			var tx: int = cx + dx
-			var ty: int = cy + dy
-			if grid.in_bounds(tx, ty):
-				grid.set_terrain(tx, ty, _active_terrain)
-				# Xoá lửa khi vẽ đè
-				grid.fire[grid.idx(tx, ty)] = 0
-				_world_view.mark_dirty(tx, ty)
+	var r: int = _brush_size / 2
+	_execute_command(SetTerrainCommand.new(cx, cy, r, _active_terrain))
 
 func _use_power(tx: int, ty: int) -> void:
 	if _active_power.is_empty():
 		return
-	_power_system.apply_power(_active_power, tx, ty, _world_state)
+	_execute_command(UsePowerCommand.new(tx, ty, _active_power))
 
 func _spawn_citizen(tx: int, ty: int) -> void:
-	var grid: TileGrid = _world_state.tile_grid
-	if not grid.in_bounds(tx, ty): return
-	var t: int = grid.terrain[grid.idx(tx, ty)]
-	if t <= 1: return # Không đẻ dưới nước
-	_world_state.citizens.spawn(float(tx) + 0.5, float(ty) + 0.5, _active_race)
+	_execute_command(SpawnCitizenCommand.new(tx, ty, _active_race))
 
 func _select_citizen(tx: float, ty: float) -> void:
 	var cid: int = _world_state.citizens.get_closest(tx, ty, 3.0)
@@ -208,27 +205,12 @@ func _select_citizen(tx: float, ty: float) -> void:
 		hud.track_citizen(cid)
 
 func _paint_road(tx: int, ty: int) -> void:
-	var grid: TileGrid = _world_state.tile_grid
-	if not grid.in_bounds(tx, ty): return
-	var t: int = grid.terrain[grid.idx(tx, ty)]
-	if t <= 1 or t == 5 or t == 9: return # Không xây đường trên biển, núi, dung nham
-	var i: int = grid.idx(tx, ty)
-	# Nếu click phải thì xoá đường, nhưng giờ chỉ có nút trái (mặc định tô)
-	# Hoặc toggle? Ta làm toggle cho nhanh:
-	if grid.road[i] == 0:
-		grid.road[i] = 1
-	_world_view.mark_dirty(tx, ty)
-	EventBus.tile_changed.emit(tx, ty)
+	# Mặc định là xây đường
+	_execute_command(PlaceRoadCommand.new(tx, ty, false))
 
 func _paint_zone(tx: int, ty: int) -> void:
-	var grid: TileGrid = _world_state.tile_grid
 	var r: int = int(_brush_size / 2.0)
-	for y: int in range(ty - r, ty + r + 1):
-		for x: int in range(tx - r, tx + r + 1):
-			if grid.in_bounds(x, y):
-				grid.zone[grid.idx(x, y)] = _active_zone
-				_world_view.mark_dirty(x, y)
-				EventBus.tile_changed.emit(x, y)
+	_execute_command(SetZoneCommand.new(tx, ty, r, _active_zone))
 
 # ──────────────────────────────────────────────
 # Toolbar callbacks
