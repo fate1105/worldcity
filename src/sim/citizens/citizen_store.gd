@@ -196,6 +196,17 @@ func get_stats(id: int) -> Array[int]:
 		stat_cha[id], stat_crf[id], stat_lck[id], stat_brv[id]
 	]
 
+func set_stats(id: int, stats: Array[int]) -> void:
+	if stats.size() == 8:
+		stat_str[id] = stats[0]
+		stat_agi[id] = stats[1]
+		stat_int[id] = stats[2]
+		stat_end[id] = stats[3]
+		stat_cha[id] = stats[4]
+		stat_crf[id] = stats[5]
+		stat_lck[id] = stats[6]
+		stat_brv[id] = stats[7]
+
 ## Tìm cư dân gần nhất (click chuột)
 func get_closest(x: float, y: float, max_dist: float = 2.0) -> int:
 	var best_id: int = -1
