@@ -4,6 +4,7 @@ extends Node2D
 ## M1: WorldState, WorldGen, WorldView, Camera
 ## M2: DataDB, GameClock, HUD
 ## M3: PowerSystem, Toolbar, input routing (terrain brush + god powers)
+## M7: EconomySystem – kinh tế hàng tháng
 
 @onready var _camera: CameraController    = $CameraController
 @onready var _world_view: WorldView        = $WorldView
@@ -19,6 +20,8 @@ var _world_state: WorldState
 var _power_system: PowerSystem
 var _citizen_system: CitizenSystem
 var _city_system: CitySystem
+var _economy_system: EconomySystem
+var _kingdom_system: KingdomSystem
 var _pathfinding: PathfindingSystem
 var _rng: RandomNumberGenerator
 
@@ -49,10 +52,19 @@ func _ready() -> void:
 	_world_state.mana     = _world_state.max_mana
 	WorldGen.generate(_world_state, seed_val)
 
-	# PowerSystem & CitizenSystem
+	# Khởi tạo tài nguyên từ balance.json
+	var start: Dictionary = DataDB.balance("start")
+	_world_state.gold  = float(start.get("gold",  1000))
+	_world_state.food  = float(start.get("food",  200))
+	_world_state.wood  = float(start.get("wood",  50))
+	_world_state.stone = float(start.get("stone", 20))
+
+	# Hệ thống
 	_power_system = PowerSystem.new(_rng)
 	_citizen_system = CitizenSystem.new(_rng)
 	_city_system = CitySystem.new(_rng)
+	_economy_system = EconomySystem.new(_rng)
+	_kingdom_system = KingdomSystem.new(_rng)
 	_pathfinding = PathfindingSystem.new(_world_state)
 
 	# Đồng bộ clock
@@ -115,6 +127,8 @@ func _on_day_passed(_day: int, _month: int, _year: int) -> void:
 
 func _on_month_passed(_month: int, _year: int) -> void:
 	_citizen_system.process_month(_world_state)
+	_economy_system.process_month(_world_state)
+	_kingdom_system.process_month(_world_state)
 
 func _mark_fire_dirty() -> void:
 	var grid: TileGrid = _world_state.tile_grid
@@ -179,11 +193,7 @@ func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	return Vector2i(int(world_pos.x / TILE_PX), int(world_pos.y / TILE_PX))
 
 func _execute_command(cmd: Command) -> void:
-	if cmd.validate(_world_state):
-		cmd.execute(_world_state)
-		# Nếu là tool thay đổi tile, _world_view.mark_dirty được gọi ở đâu?
-		# EventBus.tile_changed sẽ được _world_view lắng nghe,
-		# nhưng hiện tại _world_view chỉ có hàm mark_dirty. 
+	CommandBus.submit(_world_state, cmd)
 		# Ta sẽ gọi mark_dirty(tx, ty) khi nhận event tile_changed!
 
 func _paint_terrain(cx: int, cy: int) -> void:
@@ -246,14 +256,15 @@ func _on_brush_size_changed(size: int) -> void:
 # ──────────────────────────────────────────────
 
 func _process(_delta: float) -> void:
-	_label_fps.text = "FPS: %d  |  Tick: %d  |  Mana: %d  |  Dân: %d" % [
+	_label_fps.text = "FPS: %d  |  Tick: %d  |  Mana: %d  |  Dan: %d" % [
 		Engine.get_frames_per_second(),
 		GameClock.tick,
 		int(_world_state.mana),
 		_world_state.citizens.count
 	]
-	_label_info.text = "Map: %dx%d  |  Seed: %d  |  Tool: %s" % [
+	_label_info.text = "Map: %dx%d  |  Seed: %d  |  Gold: %d  |  Food: %d  |  Tool: %s" % [
 		MAP_WIDTH, MAP_HEIGHT, _world_state.rng_seed,
+		int(_world_state.gold), int(_world_state.food),
 		_get_tool_label()
 	]
 

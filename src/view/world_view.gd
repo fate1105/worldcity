@@ -138,6 +138,13 @@ func _build_chunk(chunk_idx: int) -> void:
 				if z > 0:
 					color = color.blend(ZONE_COLORS[z])
 
+			# Overlay lãnh thổ vương quốc
+			var o_id: int = grid.owner_id[i]
+			if o_id != -1 and _world_state.kingdoms.has(o_id):
+				var kingdom: Kingdom = _world_state.kingdoms[o_id]
+				var k_color: Color = kingdom.color
+				color = color.blend(Color(k_color.r, k_color.g, k_color.b, 0.4))
+
 			# Overlay lửa
 			var fire_val: int = grid.fire[i]
 			if fire_val > 0:

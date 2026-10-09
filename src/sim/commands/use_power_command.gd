@@ -10,16 +10,23 @@ func _init(x: int, y: int, p_id: String) -> void:
 	ty = y
 	power_id = p_id
 
-func validate(state: WorldState) -> bool:
+func validate(state: WorldState) -> Error:
 	if power_id.is_empty():
-		return false
+		return FAILED
 	var pdata: Dictionary = DataDB.power(power_id)
 	if pdata.is_empty():
-		return false
-	var cost: float = float(pdata.get("mana", 0))
-	if state.mana < cost:
-		return false
-	return true
+		return FAILED
+	var cost_mana: float = float(pdata.get("mana", 0))
+	if state.mana < cost_mana:
+		return FAILED
+	return OK
 
-func execute(state: WorldState) -> void:
+func execute(_state: WorldState) -> void:
 	EventBus.power_used.emit(power_id, tx, ty)
+
+func cost(_state: WorldState) -> Dictionary:
+	var pdata: Dictionary = DataDB.power(power_id)
+	return {"mana": float(pdata.get("mana", 0))}
+
+func describe() -> String:
+	return "Use Power %s at (%d, %d)" % [power_id, tx, ty]

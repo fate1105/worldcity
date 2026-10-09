@@ -31,6 +31,11 @@ text = "Ngày 1  Tháng 1  Năm 1"
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 
+[node name="LabelEconomy" type="Label" parent="TopBar/HBoxMain"]
+layout_mode = 2
+text = "🟡 --  🌾 --"
+theme_override_font_sizes/font_size = 16
+
 [node name="HBoxSpeed" type="HBoxContainer" parent="TopBar/HBoxMain"]
 layout_mode = 2
 theme_override_constants/separation = 4
@@ -88,3 +93,21 @@ theme_override_font_sizes/font_size = 14
 text = "Tuổi: --
 Đói: --
 Hạnh phúc: --"
+
+[node name="PanelMinimap" type="PanelContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -240.0
+offset_right = -10.0
+offset_bottom = -90.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="TextureRect" type="TextureRect" parent="PanelMinimap"]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5

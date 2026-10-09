@@ -1,0 +1,22 @@
+{
+  "human": {
+    "first": ["Aiden", "Rowan", "Elara", "Finn", "Mara", "Cael", "Sera", "Dun", "Lyra", "Tomas",
+              "Hana", "Bren", "Sana", "Oric", "Vela", "Kael", "Nora", "Dara", "Eron", "Lina"],
+    "last":  ["Stone", "River", "Hill", "Marsh", "Vale", "Cross", "Ford", "Brook", "Ash", "Glen"]
+  },
+  "elf": {
+    "first": ["Aelindra", "Sylvael", "Erindor", "Caladwen", "Thilorean", "Míriel", "Galadh",
+              "Celeborn", "Aranel", "Elenmir", "Lúthiel", "Falathar", "Nimrodel", "Vanariel"],
+    "last":  ["Starweave", "Moonveil", "Dawnleaf", "Silverbow", "Duskpetal", "Windwhisper"]
+  },
+  "orc": {
+    "first": ["Grak", "Ursha", "Mog", "Droga", "Krag", "Vrosh", "Zug", "Borka", "Thrak", "Grul",
+              "Skara", "Norg", "Urgha", "Bruk", "Torgha"],
+    "last":  ["Bloodfang", "Ironjaw", "Skullbreak", "Stonefist", "Grimtusk", "Warcry"]
+  },
+  "dwarf": {
+    "first": ["Durin", "Balin", "Glóin", "Nori", "Gimli", "Thrór", "Bifur", "Dori", "Óin",
+              "Bruni", "Fili", "Kili", "Fundin", "Dáin", "Thorin"],
+    "last":  ["Ironforge", "Stonehammer", "Deepdelve", "Goldvein", "Rockfist", "Boulderback"]
+  }
+}

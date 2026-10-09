@@ -15,14 +15,25 @@ signal mana_changed(current: float, maximum: float)
 # --- Cư dân ---
 signal citizen_spawned(id: int)
 signal citizen_died(id: int)
+signal citizen_born(id: int, parent_a: int, parent_b: int)
 
 # --- Thế giới ---
 signal world_generated(seed_val: int)
 signal tile_changed(x: int, y: int)
 
+# --- Vương quốc ---
+signal kingdom_founded(k_id: int)
+
 # --- Tốc độ ---
 signal speed_changed(new_speed: int)  # 0=pause, 1, 2, 5
 
+# --- Command ---
+signal command_executed(cmd: Command)
+
+# --- Kinh tế (M7) ---
+signal economy_updated(gold: float, food: float)
+signal food_shortage(current_food: float, needed: float)
+signal budget_crisis(gold: float, deficit_months: int)
 
 
 # --- Công trình (dùng từ Milestone 6) ---

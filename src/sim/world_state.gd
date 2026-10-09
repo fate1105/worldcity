@@ -13,9 +13,18 @@ var tile_grid: TileGrid
 
 # Tham chiếu đến tập dân cư
 var citizens: CitizenStore
+var citizen_names: CitizenNames
+
+# RNG mô phỏng chung
+var rng: RandomNumberGenerator
 
 # Danh sách các công trình (Dictionary: id -> Building)
 var buildings: Dictionary = {}
+var next_building_id: int = 1
+
+# Danh sách vương quốc (Dictionary: id -> Kingdom)
+var kingdoms: Dictionary = {}
+var next_kingdom_id: int = 1
 
 # Thời gian
 var tick: int = 0
@@ -27,12 +36,24 @@ var year: int = 1
 var mana: float = 100.0
 var max_mana: float = 100.0
 
+# Tài nguyên kinh tế (dùng chung toàn thế giới; từ M9 mỗi Kingdom có riêng)
+var gold: float = 1000.0
+var food: float = 200.0
+var wood: float = 50.0
+var stone: float = 20.0
+
+# Ngân sách: số tháng liên tiếp bị thâm hụt (nếu >= 3 thì bất ổn)
+var deficit_months: int = 0
+
 func _init(width: int = 128, height: int = 128, seed_val: int = 0) -> void:
 	map_width = width
 	map_height = height
 	rng_seed = seed_val
+	rng = RandomNumberGenerator.new()
+	rng.seed = seed_val
 	tile_grid = TileGrid.new(width, height)
 	citizens = CitizenStore.new()
+	citizen_names = CitizenNames.new(rng)
 
 func to_dict() -> Dictionary:
 	return {

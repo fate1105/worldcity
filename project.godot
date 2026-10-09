@@ -25,6 +25,7 @@ GameClock="*res://src/autoload/game_clock.gd"
 DataDB="*res://src/autoload/data_db.gd"
 SaveSystem="*res://src/autoload/save_system.gd"
 Settings="*res://src/autoload/settings.gd"
+CommandBus="*res://src/autoload/command_bus.gd"
 
 [debug]
 

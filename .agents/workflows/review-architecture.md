@@ -10,5 +10,6 @@ Kiểm tra và liệt kê vi phạm kèm file/dòng:
 5. Hệ thống nào gọi chéo trực tiếp thay vì `EventBus`.
 6. File nào > 400 dòng. Vòng lặp nào có nguy cơ chậm (O(n^2) trên cư dân/ô).
 7. RNG nào không có seed.
+8. UI/Tool/AI nào sửa state trực tiếp thay vì gửi Command. AI nào gian lận luật.
 
 Kết thúc bằng danh sách ưu tiên sửa (cao/vừa/thấp) và đề xuất milestone refactor nếu cần.

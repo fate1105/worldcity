@@ -10,8 +10,8 @@ func _init(x: int, y: int, radius: int = 0) -> void:
 	ty = y
 	r = radius
 
-func validate(state: WorldState) -> bool:
-	return true
+func validate(_state: WorldState) -> Error:
+	return OK
 
 func execute(state: WorldState) -> void:
 	var grid: TileGrid = state.tile_grid
@@ -40,3 +40,6 @@ func execute(state: WorldState) -> void:
 				if grid.road[idx] > 0:
 					grid.road[idx] = 0
 					EventBus.tile_changed.emit(x, y)
+
+func describe() -> String:
+	return "Demolish at (%d, %d) r=%d" % [tx, ty, r]

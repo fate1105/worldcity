@@ -11,6 +11,7 @@ var _disasters: Dictionary = {}
 var _events: Dictionary = {}
 var _terrain: Dictionary = {}
 var _balance: Dictionary = {}
+var _names: Dictionary = {}
 
 ## Gọi 1 lần khi game khởi động (game.gd hoặc autoload _ready)
 func load_all() -> void:
@@ -22,6 +23,7 @@ func load_all() -> void:
 	_events     = _load_json("res://data/events.json")
 	_terrain    = _load_json("res://data/terrain.json")
 	_balance    = _load_json("res://data/balance.json")
+	_names      = _load_json("res://data/names.json")
 	_validate_all()
 
 # ──────────────────────────────────────────────
@@ -60,6 +62,9 @@ func all_races() -> Dictionary:
 
 func all_powers() -> Dictionary:
 	return _powers
+
+func name_list(race_key: String) -> Dictionary:
+	return _lookup(_names, "names", race_key)
 
 # ──────────────────────────────────────────────
 # Nội bộ

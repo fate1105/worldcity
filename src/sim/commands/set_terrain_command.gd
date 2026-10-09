@@ -12,8 +12,8 @@ func _init(x: int, y: int, radius: int, t_type: int) -> void:
 	r = radius
 	terrain_type = t_type
 
-func validate(state: WorldState) -> bool:
-	return true
+func validate(_state: WorldState) -> Error:
+	return OK
 
 func execute(state: WorldState) -> void:
 	var grid: TileGrid = state.tile_grid
@@ -25,3 +25,6 @@ func execute(state: WorldState) -> void:
 				grid.set_terrain(nx, ny, terrain_type)
 				grid.fire[grid.idx(nx, ny)] = 0
 				EventBus.tile_changed.emit(nx, ny)
+
+func describe() -> String:
+	return "Set Terrain %d at (%d, %d) r=%d" % [terrain_type, tx, ty, r]

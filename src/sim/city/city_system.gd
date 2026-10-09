@@ -3,7 +3,6 @@ extends RefCounted
 
 ## Quản lý các công trình (Buildings), quy hoạch (Zoning) và nhu cầu (Demand)
 
-var _next_id: int = 1
 var _rng: RandomNumberGenerator
 
 func _init(rng: RandomNumberGenerator) -> void:
@@ -38,9 +37,8 @@ func _grow_buildings(world_state: WorldState) -> void:
 			_try_place_building(world_state, x, y, "farm")
 
 func _try_place_building(world_state: WorldState, x: int, y: int, b_type: String) -> bool:
-	var cmd := PlaceBuildingCommand.new(x, y, b_type, _next_id)
-	if cmd.validate(world_state):
-		cmd.execute(world_state)
-		_next_id += 1
+	var cmd := PlaceBuildingCommand.new(x, y, b_type, world_state.next_building_id)
+	if CommandBus.submit(world_state, cmd) == OK:
+		world_state.next_building_id += 1
 		return true
 	return false

@@ -12,9 +12,8 @@ func _init(x: int, y: int, radius: int, z_type: int) -> void:
 	r = radius
 	zone_type = z_type
 
-func validate(state: WorldState) -> bool:
-	# Luôn hợp lệ (hoặc có thể kiểm tra xem có ô nào in_bounds không)
-	return true
+func validate(_state: WorldState) -> Error:
+	return OK
 
 func execute(state: WorldState) -> void:
 	var grid: TileGrid = state.tile_grid
@@ -25,3 +24,6 @@ func execute(state: WorldState) -> void:
 				# Nếu đã có công trình, có thể không cho phép đổi zone, nhưng hiện tại cứ ghi đè
 				grid.zone[i] = zone_type
 				EventBus.tile_changed.emit(x, y)
+
+func describe() -> String:
+	return "Set Zone %d at (%d, %d) r=%d" % [zone_type, tx, ty, r]
