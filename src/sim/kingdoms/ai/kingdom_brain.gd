@@ -34,6 +34,12 @@ func _think(world: WorldState, k: Kingdom) -> void:
 	if pop == 0:
 		return
 		
+	var ai_data: Dictionary = DataDB.ai()
+	var p_data: Dictionary = ai_data.get("personalities", {}).get(k.personality, {})
+	var w_housing: float = float(p_data.get("housing", 1.0))
+	var w_infra: float = float(p_data.get("infrastructure", 1.0))
+	var w_trade: float = float(p_data.get("trade", 1.0))
+	
 	# Nếu thức ăn dự trữ không đủ cho 3 tháng tới -> Xây farm
 	var safe_food: float = float(pop) * 3.0
 	if k.food < safe_food and k.gold >= 40:
@@ -41,18 +47,18 @@ func _think(world: WorldState, k: Kingdom) -> void:
 			return # Đã làm 1 hành động
 
 	# Nếu nhiều người thất nghiệp -> Xây công nghiệp/thương mại
-	if unemployed > pop * 0.1 and k.gold >= 40:
+	if unemployed > pop * (0.1 / w_trade) and k.gold >= 40:
 		if CityPlanner.plan_job(world, k, _rng):
 			return
 			
 	# Nếu thiếu đất trống -> Mở rộng lãnh thổ
 	var grid: TileGrid = world.tile_grid
 	var territory_size: int = CityPlanner._get_territory(grid, k.id).size()
-	if territory_size < pop * 2 and k.gold >= 50:
+	if territory_size < pop * 2.0 * w_infra and k.gold >= 50:
 		if CityPlanner.plan_expansion(world, k, _rng):
 			return
 			
 	# Nếu thiếu nhà ở -> Quy hoạch thêm vùng R
-	if homeless > 0 or _rng.randf() < 0.1: # 10% mở rộng
+	if homeless > 0 or _rng.randf() < 0.1 * w_housing: # 10% mở rộng nhân hệ số
 		if CityPlanner.plan_housing(world, k, _rng):
 			return

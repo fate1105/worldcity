@@ -179,7 +179,8 @@ func _feed_citizens(world_state: WorldState) -> void:
 					var extra_hunger: int = int(starving_chance * 30)
 					store.hunger[cid] = clampi(int(store.hunger[cid]) + extra_hunger, 0, 100)
 				else:
-					store.hunger[cid] = 0
+					# Nếu có đủ thức ăn, được ăn no
+					store.hunger[cid] = maxi(0, int(store.hunger[cid]) - 30)
 
 # ─────────────────────────────────────────────────
 # 6. Cập nhật sức khỏe ngân sách

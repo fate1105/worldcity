@@ -25,17 +25,13 @@ const FIRE_COLOR_HIGH: Color = Color(1.0, 0.35, 0.0, 0.85)
 const FIRE_COLOR_LOW:  Color = Color(1.0, 0.65, 0.0, 0.45)
 const ROAD_COLOR: Color = Color(0.25, 0.25, 0.25)
 
-const ZONE_COLORS: Array[Color] = [
-	Color.TRANSPARENT,
-	Color(0.0, 1.0, 0.0, 0.3), # R
-	Color(0.0, 0.2, 1.0, 0.3), # C
-	Color(1.0, 0.8, 0.0, 0.3)  # I
-]
+
 
 var _world_state: WorldState
 var _chunks_x: int
 var _chunks_y: int
 var _chunk_sprites: Array[Sprite2D] = []
+var _border_sprites: Array[Sprite2D] = []
 var _dirty_chunks: PackedByteArray
 var _camera_ref: Camera2D
 
@@ -63,6 +59,16 @@ func setup(world_state: WorldState, camera: Camera2D) -> void:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(sprite)
 		_chunk_sprites[ci] = sprite
+		
+		var b_sprite := Sprite2D.new()
+		b_sprite.name = "Border_%d" % ci
+		b_sprite.centered = false
+		b_sprite.position = sprite.position
+		b_sprite.scale = sprite.scale
+		b_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		b_sprite.z_index = 1 # Vẽ đè lên chunk
+		add_child(b_sprite)
+		_border_sprites.append(b_sprite)
 
 	# Lắng nghe signal tile_changed từ EventBus để đánh dirty chunk
 	EventBus.tile_changed.connect(_on_tile_changed)
@@ -81,6 +87,11 @@ func _on_tile_changed(tx: int, ty: int) -> void:
 
 func _process(_delta: float) -> void:
 	_flush_dirty_chunks()
+	
+	if _camera_ref:
+		var show_borders: bool = _camera_ref.zoom.x <= 0.6
+		for b_sprite in _border_sprites:
+			b_sprite.visible = show_borders
 
 func _flush_dirty_chunks() -> void:
 	for ci: int in range(_dirty_chunks.size()):
@@ -107,6 +118,7 @@ func _build_chunk(chunk_idx: int) -> void:
 	var img_h: int = end_y - start_y
 
 	var img := Image.create(img_w, img_h, false, Image.FORMAT_RGB8)
+	var img_border := Image.create(img_w, img_h, false, Image.FORMAT_RGBA8)
 	var grid: TileGrid = _world_state.tile_grid
 
 	for ty: int in range(start_y, end_y):
@@ -133,17 +145,26 @@ func _build_chunk(chunk_idx: int) -> void:
 				if grid.road[i] > 0:
 					color = color.blend(ROAD_COLOR.lerp(Color.TRANSPARENT, 0.3))
 
-				# Overlay quy hoạch (Zone) - chỉ hiện khi chưa có nhà
-				var z: int = grid.zone[i]
-				if z > 0:
-					color = color.blend(ZONE_COLORS[z])
-
 			# Overlay lãnh thổ vương quốc
 			var o_id: int = grid.owner_id[i]
+			var border_color := Color.TRANSPARENT
 			if o_id != -1 and _world_state.kingdoms.has(o_id):
 				var kingdom: Kingdom = _world_state.kingdoms[o_id]
 				var k_color: Color = kingdom.color
 				color = color.blend(Color(k_color.r, k_color.g, k_color.b, 0.4))
+				
+				# Kiểm tra xem có phải viền không (viền = có ô xung quanh khác o_id)
+				var is_border = false
+				var dirs = [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]
+				for d in dirs:
+					var nx: int = tx + d.x
+					var ny: int = ty + d.y
+					if grid.in_bounds(nx, ny) and grid.owner_id[grid.idx(nx, ny)] != o_id:
+						is_border = true
+						break
+				if is_border:
+					border_color = k_color
+					border_color.a = 1.0
 
 			# Overlay lửa
 			var fire_val: int = grid.fire[i]
@@ -153,5 +174,7 @@ func _build_chunk(chunk_idx: int) -> void:
 				color = color.blend(fire_color)
 
 			img.set_pixel(tx - start_x, ty - start_y, color)
+			img_border.set_pixel(tx - start_x, ty - start_y, border_color)
 
 	_chunk_sprites[chunk_idx].texture = ImageTexture.create_from_image(img)
+	_border_sprites[chunk_idx].texture = ImageTexture.create_from_image(img_border)

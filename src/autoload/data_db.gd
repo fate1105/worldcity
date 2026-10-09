@@ -12,6 +12,7 @@ var _events: Dictionary = {}
 var _terrain: Dictionary = {}
 var _balance: Dictionary = {}
 var _names: Dictionary = {}
+var _ai: Dictionary = {}
 
 ## Gọi 1 lần khi game khởi động (game.gd hoặc autoload _ready)
 func load_all() -> void:
@@ -24,6 +25,7 @@ func load_all() -> void:
 	_terrain    = _load_json("res://data/terrain.json")
 	_balance    = _load_json("res://data/balance.json")
 	_names      = _load_json("res://data/names.json")
+	_ai         = _load_json("res://data/ai.json")
 	_validate_all()
 
 # ──────────────────────────────────────────────
@@ -53,6 +55,9 @@ func balance(key: String) -> Variant:
 		return _balance[key]
 	push_error("DataDB: thiếu balance key '%s'" % key)
 	return null
+
+func ai() -> Dictionary:
+	return _ai
 
 func all_buildings() -> Dictionary:
 	return _buildings

@@ -29,7 +29,7 @@ func validate(state: WorldState) -> Error:
 			if not grid.in_bounds(nx, ny):
 				return FAILED
 			var idx: int = grid.idx(nx, ny)
-			if grid.building_id[idx] != -1 or grid.zone[idx] == TileGrid.ZoneType.NONE:
+			if grid.building_id[idx] != -1:
 				return FAILED
 			if grid.terrain[idx] <= 1 or grid.terrain[idx] == 5 or grid.terrain[idx] == 9:
 				return FAILED

@@ -18,11 +18,14 @@ var stone: float = 0.0
 
 var population: int = 0
 var founded_year: int = 1
+var personality: String = "builder"
+var king_id: int = -1
 
-func _init(k_id: int, k_name: String, r_id: int, c: Color, cap_id: int, year: int) -> void:
+func _init(k_id: int, k_name: String, r_id: int, c: Color, cap_id: int, year: int, p: String = "builder") -> void:
 	id = k_id
 	name = k_name
 	race_id = r_id
 	color = c
 	capital_id = cap_id
 	founded_year = year
+	personality = p

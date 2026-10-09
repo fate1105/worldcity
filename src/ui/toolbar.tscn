@@ -22,11 +22,10 @@ theme_override_constants/separation = 4
 
 [node name="TabBar" type="TabBar" parent="BgPanel/VBox"]
 layout_mode = 2
-tab_count = 4
+tab_count = 3
 tab_0/title = "Địa hình"
 tab_1/title = "Quyền năng"
 tab_2/title = "Sinh vật"
-tab_3/title = "Quy hoạch"
 
 [node name="RowTerrain" type="HBoxContainer" parent="BgPanel/VBox"]
 layout_mode = 2
@@ -43,7 +42,4 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 44)
 theme_override_constants/separation = 4
 
-[node name="RowZone" type="HBoxContainer" parent="BgPanel/VBox"]
-layout_mode = 2
-custom_minimum_size = Vector2(0, 44)
-theme_override_constants/separation = 4
+

@@ -18,5 +18,9 @@
     "first": ["Durin", "Balin", "Glóin", "Nori", "Gimli", "Thrór", "Bifur", "Dori", "Óin",
               "Bruni", "Fili", "Kili", "Fundin", "Dáin", "Thorin"],
     "last":  ["Ironforge", "Stonehammer", "Deepdelve", "Goldvein", "Rockfist", "Boulderback"]
+  },
+  "animal": {
+    "first": ["Sói", "Gấu", "Hươu", "Nai", "Thỏ", "Cáo", "Lợn rừng", "Báo", "Hổ", "Chồn"],
+    "last":  ["Hoang", "Đen", "Xám", "Nâu", "Tuyết", "Rừng sâu"]
   }
 }

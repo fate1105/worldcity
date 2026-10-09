@@ -4,9 +4,7 @@ extends RefCounted
 ## Quản lý tên cư dân theo chủng tộc.
 ## Mỗi cư dân có một name_id (int), tra cứu ra chuỗi tên đầy đủ.
 ## Không dùng Node. Không lưu tên trong PackedArray (tiết kiệm bộ nhớ).
-
-const RACE_KEYS: Array[String] = ["human", "elf", "orc", "dwarf"]
-
+const RACE_KEYS: Array[String] = ["human", "elf", "orc", "dwarf", "animal"]
 # name_id → "First Last" (được xây lúc spawn, lưu trong Dictionary)
 var _names: Dictionary = {}
 var _next_name_id: int = 1

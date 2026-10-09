@@ -26,12 +26,12 @@ var _pathfinding: PathfindingSystem
 var _rng: RandomNumberGenerator
 
 # --- Trạng thái công cụ ---
-enum ToolMode { SELECT, TERRAIN, POWER, SPAWN, ROAD, ZONE }
+enum ToolMode { SELECT, TERRAIN, POWER, SPAWN, ROAD }
 var _tool_mode: ToolMode   = ToolMode.SELECT
 var _active_terrain: int   = TileGrid.TileType.GRASS
 var _active_power: String  = ""
 var _active_race: int      = 0
-var _active_zone: int      = 0
+
 var _brush_size: int       = 1
 var _mouse_held: bool      = false
 
@@ -77,6 +77,12 @@ func _ready() -> void:
 	var renderer := $CitizenRenderer as CitizenRenderer
 	if renderer:
 		renderer.setup(_world_state.citizens)
+		
+	var foliage = FoliageRenderer.new()
+	foliage.name = "FoliageRenderer"
+	add_child(foliage)
+	move_child(foliage, renderer.get_index()) # Vẽ dưới công dân
+	foliage.setup(_world_state)
 
 	var hud := $HUD
 	if hud.has_method("set_world_state"):
@@ -91,8 +97,7 @@ func _ready() -> void:
 		_toolbar.select_tool_selected.connect(_on_select_tool)
 	if _toolbar.has_signal("road_tool_selected"):
 		_toolbar.road_tool_selected.connect(_on_road_tool)
-	if _toolbar.has_signal("zone_selected"):
-		_toolbar.zone_selected.connect(_on_zone_selected)
+
 
 	# Clock signals
 	EventBus.tick_happened.connect(_on_tick)
@@ -185,8 +190,6 @@ func _apply_tool_at(screen_pos: Vector2) -> void:
 			_spawn_citizen(tile_pos.x, tile_pos.y)
 		ToolMode.ROAD:
 			_paint_road(tile_pos.x, tile_pos.y)
-		ToolMode.ZONE:
-			_paint_zone(tile_pos.x, tile_pos.y)
 
 func _screen_to_tile(screen_pos: Vector2) -> Vector2i:
 	var world_pos: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * screen_pos
@@ -211,16 +214,27 @@ func _spawn_citizen(tx: int, ty: int) -> void:
 func _select_citizen(tx: float, ty: float) -> void:
 	var cid: int = _world_state.citizens.get_closest(tx, ty, 3.0)
 	var hud := $HUD
-	if hud.has_method("track_citizen"):
-		hud.track_citizen(cid)
+	if cid != -1:
+		if hud.has_method("track_citizen"):
+			hud.track_citizen(cid)
+	else:
+		var itx: int = int(tx)
+		var ity: int = int(ty)
+		if _world_state.tile_grid.in_bounds(itx, ity):
+			var idx: int = _world_state.tile_grid.idx(itx, ity)
+			var k_id: int = _world_state.tile_grid.owner_id[idx]
+			if k_id != -1:
+				if hud.has_method("track_kingdom"):
+					hud.track_kingdom(k_id)
+			else:
+				if hud.has_method("untrack"):
+					hud.untrack()
 
 func _paint_road(tx: int, ty: int) -> void:
 	# Mặc định là xây đường
 	_execute_command(PlaceRoadCommand.new(tx, ty, false))
 
-func _paint_zone(tx: int, ty: int) -> void:
-	var r: int = int(_brush_size / 2.0)
-	_execute_command(SetZoneCommand.new(tx, ty, r, _active_zone))
+
 
 # ──────────────────────────────────────────────
 # Toolbar callbacks
@@ -232,9 +246,7 @@ func _on_select_tool() -> void:
 func _on_road_tool() -> void:
 	_tool_mode = ToolMode.ROAD
 
-func _on_zone_selected(z: int) -> void:
-	_active_zone = z
-	_tool_mode = ToolMode.ZONE
+
 
 func _on_terrain_selected(terrain_type: int) -> void:
 	_active_terrain = terrain_type
@@ -274,8 +286,6 @@ func _get_tool_label() -> String:
 			return "Trỏ (Xem TT)"
 		ToolMode.ROAD:
 			return "Đường xá"
-		ToolMode.ZONE:
-			return "Quy hoạch [%dx%d]" % [_brush_size, _brush_size]
 		ToolMode.TERRAIN:
 			return "Địa hình [%dx%d]" % [_brush_size, _brush_size]
 		ToolMode.POWER:

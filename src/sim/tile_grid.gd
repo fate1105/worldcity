@@ -15,7 +15,7 @@ enum TileType {
 	LAVA        = 9,
 }
 
-enum ZoneType { NONE = 0, R = 1, C = 2, I = 3 }
+
 
 var width: int
 var height: int
@@ -26,7 +26,7 @@ var height_map: PackedByteArray   # 0-255
 var fertility: PackedByteArray    # 0-255
 var owner_id: PackedInt32Array    # id vương quốc, -1 = không ai
 var building_id: PackedInt32Array # id công trình, -1 = không có
-var zone: PackedByteArray         # 0=None, 1=R, 2=C, 3=I
+
 var road: PackedByteArray         # 0/1
 var power: PackedByteArray        # 0/1
 var water: PackedByteArray        # 0/1
@@ -50,8 +50,7 @@ func _init(w: int, h: int) -> void:
 	building_id = PackedInt32Array()
 	building_id.resize(size)
 	building_id.fill(-1)
-	zone = PackedByteArray()
-	zone.resize(size)
+
 	road = PackedByteArray()
 	road.resize(size)
 	power = PackedByteArray()

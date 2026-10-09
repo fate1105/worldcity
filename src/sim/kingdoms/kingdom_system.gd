@@ -15,7 +15,18 @@ func process_month(world: WorldState) -> void:
 	# Chạy não bộ AI cho từng vương quốc
 	for k_id: int in world.kingdoms:
 		var k: Kingdom = world.kingdoms[k_id]
+		
+		# Kiểm tra Vua
+		if k.king_id == -1 or world.citizens.alive[k.king_id] == 0:
+			_pick_new_king(world, k)
+			
 		_brain.process_month(world, k)
+
+func _pick_new_king(world: WorldState, k: Kingdom) -> void:
+	for cid in range(CitizenStore.MAX_CITIZENS):
+		if world.citizens.alive[cid] == 1 and world.citizens.kingdom_id[cid] == k.id:
+			k.king_id = cid
+			return
 
 func _try_found_kingdom(world: WorldState) -> void:
 	var cfg: Dictionary = DataDB.balance("kingdom")
@@ -57,6 +68,31 @@ func _try_found_kingdom(world: WorldState) -> void:
 			
 			var race_id: int = citizens.race_id[root_cid]
 			var race_key: String = CitizenNames.RACE_KEYS[clampi(race_id, 0, CitizenNames.RACE_KEYS.size() - 1)]
+			if race_key == "animal": continue
+			
+			# Tìm vương quốc gần đó để gia nhập thay vì lập mới
+			var join_kid: int = -1
+			var grid: TileGrid = world.tile_grid
+			for sr in range(1, 16):
+				var found = false
+				for d in [Vector2i(sr, 0), Vector2i(-sr, 0), Vector2i(0, sr), Vector2i(0, -sr)]:
+					var nx: int = int_cx + d.x
+					var ny: int = int_cy + d.y
+					if grid.in_bounds(nx, ny):
+						var nidx = grid.idx(nx, ny)
+						if grid.owner_id[nidx] != -1:
+							join_kid = grid.owner_id[nidx]
+							found = true
+							break
+				if found: break
+				
+			if join_kid != -1 and world.kingdoms.has(join_kid):
+				# Gia nhập vương quốc đã có
+				for cid in cluster:
+					citizens.kingdom_id[cid] = join_kid
+				_claim_territory(world, int_cx, int_cy, radius, join_kid)
+				return
+			
 			var k_id: int = world.next_kingdom_id
 			world.next_kingdom_id += 1
 			
@@ -65,7 +101,20 @@ func _try_found_kingdom(world: WorldState) -> void:
 			var color_str: String = rdata.get("color", "#ffffff")
 			var k_color: Color = Color(color_str)
 			
-			var k := Kingdom.new(k_id, k_name, race_id, k_color, -1, world.year)
+			var ai_data: Dictionary = DataDB.ai()
+			var weights: Dictionary = ai_data.get("personality_start_weights", {"builder": 1})
+			var total_weight: float = 0.0
+			for w: float in weights.values(): total_weight += w
+			var roll: float = _rng.randf() * total_weight
+			var chosen_personality: String = "builder"
+			for p: String in weights.keys():
+				roll -= float(weights[p])
+				if roll <= 0:
+					chosen_personality = p
+					break
+			
+			var k := Kingdom.new(k_id, k_name, race_id, k_color, -1, world.year, chosen_personality)
+			k.king_id = root_cid
 			k.gold = 500
 			k.food = 100
 			k.wood = 100

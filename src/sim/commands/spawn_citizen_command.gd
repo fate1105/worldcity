@@ -18,10 +18,11 @@ func validate(state: WorldState) -> Error:
 	return OK
 
 func execute(state: WorldState) -> void:
-	# Sinh trait ngẫu nhiên (không cần RNG có seed — dùng RNG từ WorldState)
-	var trait_mask: int = TraitSystem.random_spawn_traits(state.rng)
+	# Sinh trait ngẫu nhiên dựa trên chỉ số
+	var stats: Array[int] = TraitSystem.generate_random_stats(state.rng)
+	var trait_mask: int = TraitSystem.generate_traits_from_stats(stats, state.rng)
 	var nid: int = state.citizen_names.generate(race_id)
-	state.citizens.spawn_full(float(tx) + 0.5, float(ty) + 0.5, race_id, trait_mask, nid)
+	state.citizens.spawn_full(float(tx) + 0.5, float(ty) + 0.5, race_id, trait_mask, nid, -1, -1, 0, stats)
 
 func describe() -> String:
 	return "Spawn Citizen %d at (%d, %d)" % [race_id, tx, ty]

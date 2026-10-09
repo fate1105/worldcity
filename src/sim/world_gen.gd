@@ -49,12 +49,23 @@ static func generate(world_state: WorldState, seed_val: int) -> void:
 			# Lưu height_map (0-255)
 			grid.height_map[i] = int(hn * 255.0)
 
-			# Quyết định loại ô theo height + moisture
 			var tile_type: int = _classify(hn, mn)
 			grid.terrain[i] = tile_type
 
 			# Fertility: đất cỏ/rừng cao, biển/núi/tuyết thấp
 			grid.fertility[i] = _calc_fertility(tile_type, hn, mn)
+			
+			# Spawn động vật hoang dã
+			if (tile_type == TileGrid.TileType.FOREST or tile_type == TileGrid.TileType.GRASS):
+				var r := RandomNumberGenerator.new()
+				r.seed = seed_val + i
+				if r.randf() < 0.01: # 1% khả năng xuất hiện động vật trên rừng/cỏ
+					var race_id = CitizenNames.RACE_KEYS.find("animal")
+					if race_id != -1:
+						var name_id = world_state.citizen_names.generate(race_id)
+						var animal_stats = TraitSystem.generate_random_stats(r)
+						var animal_traits = TraitSystem.generate_traits_from_stats(animal_stats, r)
+						world_state.citizens.spawn_full(float(x), float(y), race_id, animal_traits, name_id, -1, -1, 0, animal_stats)
 
 ## Phân loại ô theo height và moisture
 static func _classify(hn: float, mn: float) -> int:

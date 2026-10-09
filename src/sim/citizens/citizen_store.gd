@@ -25,6 +25,16 @@ var parent_a: PackedInt32Array   # id cư dân cha, -1 nếu không có
 var parent_b: PackedInt32Array   # id cư dân mẹ
 var name_id: PackedInt32Array    # tra trong CitizenNames
 
+# Chỉ số cá nhân (0 - 100)
+var stat_str: PackedByteArray    # Sức mạnh (Strength)
+var stat_agi: PackedByteArray    # Nhanh nhẹn (Agility)
+var stat_int: PackedByteArray    # Trí tuệ (Intelligence)
+var stat_end: PackedByteArray    # Thể lực (Endurance)
+var stat_cha: PackedByteArray    # Sức hút (Charisma)
+var stat_crf: PackedByteArray    # Khéo léo (Craftsmanship)
+var stat_lck: PackedByteArray    # May mắn (Luck)
+var stat_brv: PackedByteArray    # Dũng cảm (Bravery)
+
 var paths: Array                 # Array[Array[Vector2i]]
 var path_idx: PackedInt32Array
 
@@ -66,6 +76,15 @@ func _init() -> void:
 	parent_b.fill(-1)
 	name_id = PackedInt32Array()
 	name_id.resize(MAX_CITIZENS)
+	
+	stat_str = PackedByteArray(); stat_str.resize(MAX_CITIZENS)
+	stat_agi = PackedByteArray(); stat_agi.resize(MAX_CITIZENS)
+	stat_int = PackedByteArray(); stat_int.resize(MAX_CITIZENS)
+	stat_end = PackedByteArray(); stat_end.resize(MAX_CITIZENS)
+	stat_cha = PackedByteArray(); stat_cha.resize(MAX_CITIZENS)
+	stat_crf = PackedByteArray(); stat_crf.resize(MAX_CITIZENS)
+	stat_lck = PackedByteArray(); stat_lck.resize(MAX_CITIZENS)
+	stat_brv = PackedByteArray(); stat_brv.resize(MAX_CITIZENS)
 
 	paths = []
 	paths.resize(MAX_CITIZENS)
@@ -105,6 +124,15 @@ func spawn(x: float, y: float, race: int) -> int:
 	name_id[id] = 0
 	paths[id] = []
 	path_idx[id] = 0
+	
+	stat_str[id] = 50
+	stat_agi[id] = 50
+	stat_int[id] = 50
+	stat_end[id] = 50
+	stat_cha[id] = 50
+	stat_crf[id] = 50
+	stat_lck[id] = 50
+	stat_brv[id] = 50
 
 	count += 1
 	EventBus.citizen_spawned.emit(id)
@@ -122,7 +150,7 @@ func kill(id: int) -> void:
 ## Sinh cư dân đầy đủ (M8): có trait, tên, cha mẹ
 ## Dùng cho sinh sản và spawn quyền thần
 func spawn_full(x: float, y: float, race: int, trait_mask: int,
-		nid: int, pa: int = -1, pb: int = -1, start_age: int = 0) -> int:
+		nid: int, pa: int = -1, pb: int = -1, start_age: int = 0, stats: Array[int] = []) -> int:
 	var id: int = spawn(x, y, race)
 	if id < 0:
 		return -1
@@ -131,9 +159,25 @@ func spawn_full(x: float, y: float, race: int, trait_mask: int,
 	parent_a[id] = pa
 	parent_b[id] = pb
 	age[id]      = start_age
+	
+	if stats.size() == 8:
+		stat_str[id] = stats[0]
+		stat_agi[id] = stats[1]
+		stat_int[id] = stats[2]
+		stat_end[id] = stats[3]
+		stat_cha[id] = stats[4]
+		stat_crf[id] = stats[5]
+		stat_lck[id] = stats[6]
+		stat_brv[id] = stats[7]
 	# Áp happiness bonus từ trait
 	happiness[id] = clampi(50 + TraitSystem.happiness_bonus(trait_mask), 0, 100)
 	return id
+
+func get_stats(id: int) -> Array[int]:
+	return [
+		stat_str[id], stat_agi[id], stat_int[id], stat_end[id],
+		stat_cha[id], stat_crf[id], stat_lck[id], stat_brv[id]
+	]
 
 ## Tìm cư dân gần nhất (click chuột)
 func get_closest(x: float, y: float, max_dist: float = 2.0) -> int:
