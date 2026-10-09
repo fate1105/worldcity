@@ -111,6 +111,13 @@ func _ready() -> void:
 	add_child(_daynight_modulate)
 	_update_daynight(GameClock.tick)
 
+	EventBus.tile_changed.connect(func(tx: int, ty: int) -> void: _world_view.mark_dirty(tx, ty))
+
+	# Phát mana ban đầu lên HUD
+	EventBus.mana_changed.emit(_world_state.mana, _world_state.max_mana)
+
+	push_warning("WorldCity seed: %d" % seed_val)
+
 func _update_daynight(tick: int) -> void:
 	if not _daynight_modulate: return
 	var time_of_day = tick % 100
@@ -131,13 +138,6 @@ func _update_daynight(tick: int) -> void:
 		color = Color(0.2, 0.2, 0.4).lerp(Color(0.6, 0.6, 0.8), t)
 	
 	_daynight_modulate.color = color
-	
-	EventBus.tile_changed.connect(func(tx: int, ty: int) -> void: _world_view.mark_dirty(tx, ty))
-
-	# Phát mana ban đầu lên HUD
-	EventBus.mana_changed.emit(_world_state.mana, _world_state.max_mana)
-
-	push_warning("WorldCity seed: %d" % seed_val)
 
 # ──────────────────────────────────────────────
 # Tick / Ngày
