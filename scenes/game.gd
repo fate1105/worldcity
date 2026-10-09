@@ -25,6 +25,8 @@ var _kingdom_system: KingdomSystem
 var _pathfinding: PathfindingSystem
 var _rng: RandomNumberGenerator
 
+var _daynight_modulate: CanvasModulate
+
 # --- Trạng thái công cụ ---
 enum ToolMode { SELECT, TERRAIN, POWER, SPAWN, ROAD }
 var _tool_mode: ToolMode   = ToolMode.SELECT
@@ -104,6 +106,32 @@ func _ready() -> void:
 	EventBus.day_passed.connect(_on_day_passed)
 	EventBus.month_passed.connect(_on_month_passed)
 	
+	_daynight_modulate = CanvasModulate.new()
+	_daynight_modulate.name = "DayNightModulate"
+	add_child(_daynight_modulate)
+	_update_daynight(GameClock.tick)
+
+func _update_daynight(tick: int) -> void:
+	if not _daynight_modulate: return
+	var time_of_day = tick % 100
+	var color = Color.WHITE
+	if time_of_day < 30: # Bình minh -> Trưa
+		var t = time_of_day / 30.0
+		color = Color(0.6, 0.6, 0.8).lerp(Color.WHITE, t)
+	elif time_of_day < 50: # Trưa
+		color = Color.WHITE
+	elif time_of_day < 70: # Hoàng hôn
+		var t = (time_of_day - 50) / 20.0
+		color = Color.WHITE.lerp(Color(1.0, 0.6, 0.4), t)
+	elif time_of_day < 90: # Tối
+		var t = (time_of_day - 70) / 20.0
+		color = Color(1.0, 0.6, 0.4).lerp(Color(0.2, 0.2, 0.4), t)
+	else: # Khuya -> Bình minh
+		var t = (time_of_day - 90) / 10.0
+		color = Color(0.2, 0.2, 0.4).lerp(Color(0.6, 0.6, 0.8), t)
+	
+	_daynight_modulate.color = color
+	
 	EventBus.tile_changed.connect(func(tx: int, ty: int) -> void: _world_view.mark_dirty(tx, ty))
 
 	# Phát mana ban đầu lên HUD
@@ -121,6 +149,8 @@ func _on_tick(_tick_num: int) -> void:
 	_power_system.tick_mana(_world_state, delta * float(GameClock.speed))
 	_pathfinding.process_queue(DataDB.balance("perf").get("path_requests_per_tick", 20))
 	_citizen_system.tick(_world_state, _pathfinding)
+	
+	_update_daynight(_tick_num)
 
 func _on_day_passed(_day: int, _month: int, _year: int) -> void:
 	# Lửa lan mỗi ngày

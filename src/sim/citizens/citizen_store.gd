@@ -34,6 +34,10 @@ var stat_cha: PackedByteArray    # Sức hút (Charisma)
 var stat_crf: PackedByteArray    # Khéo léo (Craftsmanship)
 var stat_lck: PackedByteArray    # May mắn (Luck)
 var stat_brv: PackedByteArray    # Dũng cảm (Bravery)
+var gender: PackedByteArray      # Giới tính (0: Nam, 1: Nữ)
+var spouse_id: PackedInt32Array  # ID vợ/chồng (-1 là độc thân)
+var wealth: PackedInt32Array     # Tiền bạc cá nhân
+var action_desc: Array[String]   # Chuỗi mô tả hành động đang làm
 
 var paths: Array                 # Array[Array[Vector2i]]
 var path_idx: PackedInt32Array
@@ -59,6 +63,15 @@ func _init() -> void:
 	kingdom_id.resize(MAX_CITIZENS)
 	state = PackedByteArray()
 	state.resize(MAX_CITIZENS)
+	gender = PackedByteArray()
+	gender.resize(MAX_CITIZENS)
+	spouse_id = PackedInt32Array()
+	spouse_id.resize(MAX_CITIZENS)
+	spouse_id.fill(-1)
+	wealth = PackedInt32Array()
+	wealth.resize(MAX_CITIZENS)
+	action_desc = []
+	action_desc.resize(MAX_CITIZENS)
 	home_id = PackedInt32Array()
 	home_id.resize(MAX_CITIZENS)
 	home_id.fill(-1)
@@ -124,6 +137,10 @@ func spawn(x: float, y: float, race: int) -> int:
 	name_id[id] = 0
 	paths[id] = []
 	path_idx[id] = 0
+	gender[id] = randi() % 2 # 0: Nam, 1: Nữ
+	spouse_id[id] = -1
+	wealth[id] = 0
+	action_desc[id] = "Đang ngơ ngác"
 	
 	stat_str[id] = 50
 	stat_agi[id] = 50

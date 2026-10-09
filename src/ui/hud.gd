@@ -196,12 +196,26 @@ func _update_citizen_info() -> void:
 	elif avg_st >= 45: rank_str = "C (Thường)"
 	elif avg_st >= 30: rank_str = "D (Kém)"
 
+	var gender_str = "Nam" if store.gender[id] == 0 else "Nữ"
+	
+	var spouse_str = "Độc thân"
+	if store.spouse_id[id] != -1:
+		var sp_id = store.spouse_id[id]
+		if store.alive[sp_id]:
+			spouse_str = "Đã kết hôn với " + _world_state_ref.citizen_names.get_name(store.name_id[sp_id])
+		else:
+			spouse_str = "Góa"
+			
+	var action_str = store.action_desc[id]
+	if action_str == "": action_str = "Đang ngơ ngác"
+
 	_label_title.text = "%s (%s) - %s" % [citizen_name, races[r] if r < races.size() else "???", rank_str]
-	_label_stats.text = "Vương quốc: %s\nTuổi: %d tháng\nĐói: %d/100 | Hạnh phúc: %d/100\nTraits: %s\n\nChỉ số (0-100):\nSức mạnh: %d | Nhanh nhẹn: %d\nTrí tuệ: %d | Thể lực: %d\nSức hút: %d | Khéo léo: %d\nMay mắn: %d | Dũng cảm: %d" % [
+	_label_stats.text = "Vương quốc: %s\nGiới tính: %s | Tuổi: %d tháng | Hôn nhân: %s\nTài sản: %d Vàng\nĐói: %d/100 | Hạnh phúc: %d/100\nTrạng thái: %s\nTraits: %s\n\nChỉ số (0-100):\nSức mạnh: %d | Nhanh nhẹn: %d\nTrí tuệ: %d | Thể lực: %d\nSức hút: %d | Khéo léo: %d\nMay mắn: %d | Dũng cảm: %d" % [
 		kingdom_str,
-		store.age[id],
-		store.hunger[id],
-		store.happiness[id],
+		gender_str, store.age[id], spouse_str,
+		store.wealth[id],
+		store.hunger[id], store.happiness[id],
+		action_str,
 		trait_str,
 		st[0], st[1], st[2], st[3], st[4], st[5], st[6], st[7]
 	]

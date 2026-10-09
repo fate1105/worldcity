@@ -23,36 +23,9 @@ func tick(world_state: WorldState, pathfinding: PathfindingSystem) -> void:
 		var state: int = store.state[id]
 		match state:
 			AIState.IDLE, AIState.RESTING:
-				# Ngẫu nhiên quyết định hành động mới
+				# Quyết định hành động mới với AI Utility
 				if _rng.randf() < 0.05:
-					var went_to_job = false
-					# 60% ưu tiên đi làm nếu chưa làm
-					if state != AIState.WORKING and store.job_id[id] != -1 and world_state.buildings.has(store.job_id[id]) and _rng.randf() < 0.6:
-						var b: Building = world_state.buildings[store.job_id[id]]
-						var nx = b.x + _rng.randi_range(0, max(0, b.width - 1))
-						var ny = b.y + _rng.randi_range(0, max(0, b.height - 1))
-						pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
-						store.state[id] = AIState.WAITING_PATH
-						went_to_job = true
-						
-					# Nếu không đi làm, 50% cơ hội về nhà nghỉ ngơi (nếu đang rảnh)
-					if not went_to_job and state != AIState.RESTING and store.home_id[id] != -1 and world_state.buildings.has(store.home_id[id]) and _rng.randf() < 0.5:
-						var b: Building = world_state.buildings[store.home_id[id]]
-						var nx = b.x + _rng.randi_range(0, max(0, b.width - 1))
-						var ny = b.y + _rng.randi_range(0, max(0, b.height - 1))
-						pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
-						store.state[id] = AIState.WAITING_PATH
-						went_to_job = true
-						
-					if not went_to_job:
-						# Đi loanh quanh
-						var dx: float = _rng.randf_range(-10.0, 10.0)
-						var dy: float = _rng.randf_range(-10.0, 10.0)
-						var nx: int = clampi(int(store.pos_x[id] + dx), 0, grid.width - 1)
-						var ny: int = clampi(int(store.pos_y[id] + dy), 0, grid.height - 1)
-						if grid.terrain[grid.idx(nx, ny)] > 1:
-							pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
-							store.state[id] = AIState.WAITING_PATH
+					_decide_action(world_state, id, pathfinding)
 
 			AIState.WANDER:
 				var path: Array = store.paths[id]
@@ -198,8 +171,18 @@ func _process_reproduction(world_state: WorldState) -> void:
 		var adults: Array = home_adults[hid]
 		if adults.size() < 2:
 			continue
-		var pa_id: int = adults[0]
-		var pb_id: int = adults[1]
+		var pa_id: int = -1
+		var pb_id: int = -1
+		for id1 in adults:
+			for id2 in adults:
+				if id1 != id2 and store.gender[id1] != store.gender[id2]:
+					pa_id = id1
+					pb_id = id2
+					break
+			if pa_id != -1: break
+			
+		if pa_id == -1 or pb_id == -1:
+			continue
 		# Điều kiện sinh: hạnh phúc cả hai > ngưỡng, không đói quá
 		if store.happiness[pa_id] < birth_happiness_min:
 			continue
@@ -230,6 +213,7 @@ func _process_reproduction(world_state: WorldState) -> void:
 		for i in range(0, wild_animals.size() - 1, 2):
 			var pa_id: int = wild_animals[i]
 			var pb_id: int = wild_animals[i+1]
+			if store.gender[pa_id] == store.gender[pb_id]: continue
 			if store.hunger[pa_id] > 70 or store.hunger[pb_id] > 70: continue
 			var rdata: Dictionary = DataDB.race("animal")
 			var birth_rate: float = float(rdata.get("birth_rate", 2.0)) * 0.1
@@ -243,3 +227,173 @@ func _process_reproduction(world_state: WorldState) -> void:
 			var child_id: int = store.spawn_full(cx, cy, store.race_id[pa_id], child_traits, child_nid, pa_id, pb_id, 0, child_stats)
 			if child_id >= 0:
 				EventBus.citizen_born.emit(child_id, pa_id, pb_id)
+
+func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSystem) -> void:
+	var store = world_state.citizens
+	var grid = world_state.tile_grid
+	var mask = store.traits[id]
+	var st = store.get_stats(id)
+	
+	var time_of_day = GameClock.tick % 100
+	var is_morning = time_of_day < 50
+	var is_evening = time_of_day >= 50 and time_of_day < 80
+	var is_night = time_of_day >= 80
+	
+	var score_work = 20.0
+	var score_rest = 30.0 + (store.hunger[id] * 0.5)
+	var score_socialize = 10.0 + st[4] * 0.5 # Sức hút (Cha)
+	var score_train = 10.0 + st[0] * 0.3 + st[7] * 0.3 # Sức mạnh (Str) + Dũng cảm (Brv)
+	var score_crime = 0.0
+	var score_forage = 0.0
+	var score_spend = 0.0 # Tiêu tiền giải trí
+	
+	if is_morning: score_work += 50.0
+	if is_evening: score_socialize += 40.0; score_spend += 30.0
+	if is_night: score_rest += 100.0
+	
+	if TraitSystem.has_trait(mask, "hardworking"): score_work += 50.0; score_rest -= 20.0
+	if TraitSystem.has_trait(mask, "lazy"): score_rest += 50.0; score_work -= 30.0
+	if TraitSystem.has_trait(mask, "leader"): score_socialize += 40.0
+	if TraitSystem.has_trait(mask, "warrior") or TraitSystem.has_trait(mask, "aggressive"): score_train += 40.0
+	if TraitSystem.has_trait(mask, "greedy") or TraitSystem.has_trait(mask, "aggressive"): score_crime += 40.0
+	
+	if store.wealth[id] > 50: score_spend += store.wealth[id] * 0.1
+	
+	# Đói quá thì bắt buộc đi tìm đồ ăn
+	if store.hunger[id] > 50:
+		score_forage = store.hunger[id] * 2.0
+		if store.wealth[id] >= 10: # Dùng tiền mua đồ ăn nhanh
+			store.wealth[id] -= 10
+			store.hunger[id] = 0
+			store.action_desc[id] = "Vừa tốn tiền mua bánh mì"
+			return
+		
+	# Tìm max score
+	var max_score = score_work
+	var action = 0 # 0: Work, 1: Rest, 2: Socialize, 3: Train, 4: Crime, 5: Forage, 6: Spend
+	
+	if score_rest > max_score: max_score = score_rest; action = 1
+	if score_socialize > max_score: max_score = score_socialize; action = 2
+	if score_train > max_score: max_score = score_train; action = 3
+	if score_crime > max_score: max_score = score_crime; action = 4
+	if score_forage > max_score: max_score = score_forage; action = 5
+	if score_spend > max_score: max_score = score_spend; action = 6
+	
+	match action:
+		0: # Work
+			if store.job_id[id] != -1 and world_state.buildings.has(store.job_id[id]):
+				var b = world_state.buildings[store.job_id[id]]
+				_go_to_building(store, id, b, pathfinding)
+				store.state[id] = AIState.WAITING_PATH
+				store.wealth[id] += _rng.randi_range(2, 5) # Kiếm tiền
+				store.action_desc[id] = "Đang cày cuốc kiếm tiền"
+			else:
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Thất nghiệp đi dạo"
+		1: # Rest
+			if store.home_id[id] != -1 and world_state.buildings.has(store.home_id[id]):
+				var b = world_state.buildings[store.home_id[id]]
+				_go_to_building(store, id, b, pathfinding)
+				store.state[id] = AIState.WAITING_PATH
+				if store.spouse_id[id] != -1:
+					store.action_desc[id] = "Đang ngủ cùng bạn đời"
+				else:
+					store.action_desc[id] = "Đang ngủ một mình"
+			else:
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Ngủ lang thang ngoài đường"
+		2: # Socialize
+			if store.spouse_id[id] == -1 and store.age[id] >= 216: # Độc thân & đủ 18 tuổi (18*12)
+				var target_id = _find_closest_citizen(store, id, 15.0)
+				if target_id != -1 and store.spouse_id[target_id] == -1 and store.age[target_id] >= 216 and store.gender[id] != store.gender[target_id]:
+					if _rng.randf() < 0.1: # 10% cơ hội kết hôn khi gặp
+						store.spouse_id[id] = target_id
+						store.spouse_id[target_id] = id
+						# Chuyển về chung 1 nhà nếu có thể
+						if store.home_id[id] != -1:
+							store.home_id[target_id] = store.home_id[id]
+						store.action_desc[id] = "Vừa cầu hôn thành công!"
+						store.action_desc[target_id] = "Vừa được cầu hôn!"
+						store.happiness[id] = 100
+						store.happiness[target_id] = 100
+						return
+			
+			var target_id = _find_closest_citizen(store, id, 15.0)
+			if target_id != -1:
+				pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(int(store.pos_x[target_id]), int(store.pos_y[target_id])))
+				store.state[id] = AIState.WAITING_PATH
+				store.happiness[id] = clampi(store.happiness[id] + 5, 0, 100)
+				store.happiness[target_id] = clampi(store.happiness[target_id] + 5, 0, 100)
+				store.action_desc[id] = "Đang tám chuyện vui vẻ"
+			else:
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Đang tìm người tâm sự"
+		3: # Train
+			_wander(store, id, grid, pathfinding)
+			var stats = store.get_stats(id)
+			stats[0] = clampi(stats[0] + 1, 1, 100) # Tăng Sức mạnh
+			stats[7] = clampi(stats[7] + 1, 1, 100) # Tăng Dũng cảm
+			store.set_stats(id, stats)
+			store.action_desc[id] = "Đang hít đất bồi dưỡng sức mạnh"
+		4: # Crime (Gây hấn / Ăn trộm)
+			var target_id = _find_closest_citizen(store, id, 5.0)
+			if target_id != -1:
+				store.happiness[target_id] = clampi(store.happiness[target_id] - 15, 0, 100)
+				store.happiness[id] = clampi(store.happiness[id] + 10, 0, 100)
+				if store.wealth[target_id] > 0:
+					var stolen = mini(store.wealth[target_id], 15)
+					store.wealth[target_id] -= stolen
+					store.wealth[id] += stolen
+				store.action_desc[id] = "Vừa chấn lột được tài sản"
+				store.action_desc[target_id] = "Bị cướp mất tiền!"
+			_wander(store, id, grid, pathfinding)
+			if target_id == -1: store.action_desc[id] = "Đang đi tìm con mồi"
+		5: # Forage
+			_wander_to_terrain(store, id, grid, pathfinding, [3, 4]) # Grass/Forest
+			store.action_desc[id] = "Đói rã ruột đi hái trái cây"
+		6: # Spend (Giải trí)
+			store.wealth[id] -= 5
+			store.happiness[id] = clampi(store.happiness[id] + 15, 0, 100)
+			_wander(store, id, grid, pathfinding)
+			store.action_desc[id] = "Đang tiêu tiền mua vui"
+
+func _go_to_building(store, id, b, pathfinding):
+	var nx = b.x + _rng.randi_range(0, max(0, b.width - 1))
+	var ny = b.y + _rng.randi_range(0, max(0, b.height - 1))
+	pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
+
+func _wander(store, id, grid, pathfinding):
+	var dx = _rng.randf_range(-10.0, 10.0)
+	var dy = _rng.randf_range(-10.0, 10.0)
+	var nx: int = clampi(int(store.pos_x[id] + dx), 0, grid.width - 1)
+	var ny: int = clampi(int(store.pos_y[id] + dy), 0, grid.height - 1)
+	if grid.terrain[grid.idx(nx, ny)] > 1:
+		pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
+		store.state[id] = AIState.WAITING_PATH
+
+func _wander_to_terrain(store, id, grid, pathfinding, terrain_types: Array):
+	for i in range(10): # Thử tối đa 10 lần
+		var dx = _rng.randf_range(-15.0, 15.0)
+		var dy = _rng.randf_range(-15.0, 15.0)
+		var nx: int = clampi(int(store.pos_x[id] + dx), 0, grid.width - 1)
+		var ny: int = clampi(int(store.pos_y[id] + dy), 0, grid.height - 1)
+		if terrain_types.has(grid.terrain[grid.idx(nx, ny)]):
+			pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(nx, ny))
+			store.state[id] = AIState.WAITING_PATH
+			return
+	_wander(store, id, grid, pathfinding)
+
+func _find_closest_citizen(store, self_id, max_dist) -> int:
+	var closest_id = -1
+	var min_d2 = max_dist * max_dist
+	var sx = store.pos_x[self_id]
+	var sy = store.pos_y[self_id]
+	for id in range(CitizenStore.MAX_CITIZENS):
+		if id != self_id and store.alive[id] == 1:
+			var dx = store.pos_x[id] - sx
+			var dy = store.pos_y[id] - sy
+			var d2 = dx*dx + dy*dy
+			if d2 < min_d2:
+				min_d2 = d2
+				closest_id = id
+	return closest_id
