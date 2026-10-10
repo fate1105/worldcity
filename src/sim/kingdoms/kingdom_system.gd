@@ -23,10 +23,30 @@ func process_month(world: WorldState) -> void:
 		_brain.process_month(world, k)
 
 func _pick_new_king(world: WorldState, k: Kingdom) -> void:
+	var best_score: int = -1
+	var best_cid: int = -1
+	
 	for cid in range(CitizenStore.MAX_CITIZENS):
 		if world.citizens.alive[cid] == 1 and world.citizens.kingdom_id[cid] == k.id:
-			k.king_id = cid
-			return
+			var stats = world.citizens.get_stats(cid)
+			var cha = stats[4]
+			var intl = stats[2]
+			var score = cha * 2 + intl
+			var mask = world.citizens.traits[cid]
+			if TraitSystem.has_trait(mask, "leader"):
+				score += 200
+			if TraitSystem.has_trait(mask, "genius"):
+				score += 150
+			if TraitSystem.has_trait(mask, "lazy") or TraitSystem.has_trait(mask, "coward"):
+				score -= 100
+				
+			if score > best_score:
+				best_score = score
+				best_cid = cid
+				
+	if best_cid != -1:
+		k.king_id = best_cid
+		EventBus.game_log.emit("Vương quốc " + k.name + " đã suy tôn một vị vua mới!")
 
 func _try_found_kingdom(world: WorldState) -> void:
 	var cfg: Dictionary = DataDB.balance("kingdom")
@@ -70,24 +90,31 @@ func _try_found_kingdom(world: WorldState) -> void:
 			var race_key: String = CitizenNames.RACE_KEYS[clampi(race_id, 0, CitizenNames.RACE_KEYS.size() - 1)]
 			if race_key == "animal": continue
 			
-			# Tìm vương quốc gần đó để gia nhập thay vì lập mới
+			# Tìm vương quốc cùng chủng tộc để gia nhập (1 bộ tộc chỉ 1 vương quốc)
 			var join_kid: int = -1
-			var grid: TileGrid = world.tile_grid
-			for sr in range(1, 16):
-				var found = false
-				for d in [Vector2i(sr, 0), Vector2i(-sr, 0), Vector2i(0, sr), Vector2i(0, -sr)]:
-					var nx: int = int_cx + d.x
-					var ny: int = int_cy + d.y
-					if grid.in_bounds(nx, ny):
-						var nidx = grid.idx(nx, ny)
-						if grid.owner_id[nidx] != -1:
-							join_kid = grid.owner_id[nidx]
-							found = true
-							break
-				if found: break
+			for kid in world.kingdoms:
+				if world.kingdoms[kid].race_id == race_id:
+					join_kid = kid
+					break
+			
+			# Nếu không có vương quốc cùng chủng tộc, tìm vương quốc gần đó để nương nhờ
+			if join_kid == -1:
+				var grid: TileGrid = world.tile_grid
+				for sr in range(1, 16):
+					var found = false
+					for d in [Vector2i(sr, 0), Vector2i(-sr, 0), Vector2i(0, sr), Vector2i(0, -sr)]:
+						var nx: int = int_cx + d.x
+						var ny: int = int_cy + d.y
+						if grid.in_bounds(nx, ny):
+							var nidx = grid.idx(nx, ny)
+							if grid.owner_id[nidx] != -1:
+								join_kid = grid.owner_id[nidx]
+								found = true
+								break
+					if found: break
 				
 			if join_kid != -1 and world.kingdoms.has(join_kid):
-				# Gia nhập vương quốc đã có
+				# Gia nhập vương quốc đã có (tạo khu định cư mới / mở rộng)
 				for cid in cluster:
 					citizens.kingdom_id[cid] = join_kid
 				_claim_territory(world, int_cx, int_cy, radius, join_kid)
