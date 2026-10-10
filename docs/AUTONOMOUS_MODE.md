@@ -24,33 +24,34 @@
 ## 3. Cấu trúc
 
 ```
-KingdomBrain (1 cái/vương quốc)
+Vương quốc AI (KingdomBrain)
 ├─ personality        # bộ trọng số + độ lệch ngẫu nhiên
-├─ CityPlanner        # vị trí, đường, zone, hạ tầng, dịch vụ, mở rộng
-├─ EconomyManager     # thuế, quỹ dự phòng, thức ăn, tài nguyên
-├─ PopulationManager  # nhà ở, việc làm, hạnh phúc, y tế, giáo dục
+├─ Builder            # Xây đường, hạ tầng, mở rộng biên giới tự động
+├─ EconomyManager     # thuế, quỹ dự phòng, ngân sách vương quốc
 ├─ MilitaryAdvisor    # quân đội, phòng thủ, chiến dịch
 ├─ DiplomacyAdvisor   # quan hệ, liên minh, giao thương, chiến tranh, hòa
 └─ Memory             # lệnh bị từ chối, kẻ thù, mục tiêu, lịch sử quyết định
+
+Cư dân AI (Citizen Utility AI)
+├─ Nhu cầu            # Hunger, Happiness
+├─ Tài sản            # Wealth (Tiền cá nhân kiếm được từ việc làm)
+├─ Quan hệ            # Spouse (Bạn đời)
+└─ Chỉ số             # 8 RPG Stats & Traits
 ```
 
-**Vòng suy nghĩ hàng tháng:**
+**Vòng suy nghĩ:**
 ```
-1. Quan sát: đọc "Báo cáo tình hình" (dân số, thức ăn dự báo, ngân sách, thất nghiệp, hạnh phúc, đe dọa, quan hệ)
-2. Mỗi advisor sinh ra danh sách hành động ứng viên (kèm Command dự kiến)
-3. Chấm điểm: score = nhu_cầu * trọng_số_tính_cách * khả_thi * (1 - phạt_nhớ)
-4. Chọn top N theo điểm, bỏ lệnh không đủ tiền hoặc vi phạm validate (thử trước bằng validate)
-5. Gửi Command, ghi lý do vào Memory và log debug
-6. Cập nhật mục tiêu dài hạn (3-5 năm) nếu cần
+[Vương quốc] Quản lý vĩ mô: thu thuế, trích ngân sách xây công trình công cộng, tuyên chiến, mở cõi.
+[Cư dân] Quản lý vi mô: Đánh giá nhu cầu bản thân mỗi giờ → Chọn hành động (Làm việc, Ngủ, Chơi, Tập luyện, Phạm tội, Cầu hôn) → Sinh ra tài nguyên/tiền bạc cho hệ thống.
 ```
 
-## 4. Tính cách
+## 4. Tính cách Vương quốc
 
 Mỗi tính cách là bộ trọng số theo nhóm hành động; vương quốc nhận độ lệch ±15%. Tính cách có thể **đổi** theo biến cố.
 
 | Tính cách | Ưu tiên | Hay làm | Điều kiện đổi |
 |---|---|---|---|
-| Builder (Kiến thiết) | Hạ tầng, nhà ở, dịch vụ | Mở rộng thành phố, ít chiến tranh | Bị xâm lược liên tục → Isolationist |
+| Builder (Kiến thiết) | Hạ tầng, nhà ở, dịch vụ | Mở rộng biên giới, ít chiến tranh | Bị xâm lược liên tục → Isolationist |
 | Warlord (Hiếu chiến) | Quân đội, mở rộng | Tuyên chiến, chiếm thành | Thua nặng → Isolationist/Builder |
 | Merchant (Thương gia) | Cảng, chợ, giao thương | Liên minh, thương mại | Bị cướp nhiều → Warlord |
 | Isolationist (Khép kín) | Tường thành, tự cung cấp | Phòng thủ, ít ngoại giao | Giàu và mạnh → Builder/Merchant |
@@ -58,37 +59,25 @@ Mỗi tính cách là bộ trọng số theo nhóm hành động; vương quốc
 
 ## 5. Hành động ứng viên (catalog)
 
-| Advisor | Hành động | Command | Khi nào chấm điểm cao |
+| AI Component | Hành động | Command | Khi nào chấm điểm cao |
 |---|---|---|---|
-| CityPlanner | Chọn vị trí thành phố mới | `FoundCity` | Hết chỗ/thiếu tài nguyên, đủ dân đi định cư |
-| | Mở đường tới cụm nhà/khu công nghiệp | `PlaceRoad` | Có khu chưa nối, đường dài kém hiệu quả |
-| | Tô zone R/C/I | `SetZone` | Demand R/C/I > 0 |
-| | Xây trụ điện/nước | `PlaceBuilding` | Khu có nhu cầu nhưng thiếu điện/nước |
-| | Xây trường/bệnh viện/cứu hỏa/công viên | `PlaceBuilding` | Dân/khu vượt ngưỡng phủ dịch vụ |
-| | Phá công trình hỏng/không dùng | `Demolish` | Bỏ hoang, cháy, chiếm đất cần thiết |
-| EconomyManager | Xây nông trại/lumber/mỏ | `PlaceBuilding` | Thức ăn dự báo < nhu cầu 3 tháng; thiếu gỗ/đá |
+| Cư dân (Micro AI)| Đi làm kiếm tiền | `Work` | Ban ngày, tiền ít |
+| | Đi chơi xài tiền | `Spend` / `Socialize` | Chiều/Tối, hạnh phúc thấp, rủng rỉnh tiền |
+| | Về nhà ngủ | `Sleep` | Đêm khuya |
+| | Tập tạ, hít đất | `Train` | Rảnh rỗi ban ngày, muốn tăng chỉ số sức mạnh |
+| | Phạm tội | `Crime` | Ban đêm, mang trait hung hãn/tham lam |
+| Vương quốc (Macro)| Mở biên giới | `ExpandBorder` | Dân số quá đông, hết đất cất nhà |
+| | Xây bệnh viện/trường | `PlaceBuilding` | Ngân sách dồi dào, cần buff chỉ số dân cư |
 | | Chỉnh thuế | `SetTax` | Thiếu tiền (tăng), hạnh phúc sắp thấp (giảm) |
-| | Mở giao thương/cảng | `StartTrade`, `PlaceBuilding` | Dư tài nguyên, tính cách Merchant |
-| PopulationManager | Xây công viên/đền | `PlaceBuilding` | Hạnh phúc thấp |
-| | Mở khu việc làm | `SetZone` | Thất nghiệp cao |
-| | Xây bệnh viện | `PlaceBuilding` | Dịch bệnh, tỷ lệ chết cao |
-| MilitaryAdvisor | Xây trại lính/tháp canh/tường | `PlaceBuilding` | Đe dọa gần biên giới, quan hệ xấu |
-| | Tuyển lính | `RaiseArmy` | Chuẩn bị/đang chiến tranh |
-| | Hành quân, bao vây, rút lui | `MoveArmy` | Chiến dịch đang diễn ra |
-| DiplomacyAdvisor | Tặng quà | `SendGift` | Muốn cải thiện quan hệ |
 | | Liên minh | `ProposeAlliance` | Quan hệ > 60, có kẻ thù chung |
-| | Tuyên chiến | `DeclareWar` | Xem mục 6.4 |
-| | Đình chiến | `ProposePeace` | Mệt mỏi chiến tranh, thua, kiệt quệ |
+| | Tuyên chiến | `DeclareWar` | Quân lực mạnh, tính cách Warlord |
 
 ## 6. Logic chi tiết
 
-### 6.1 CityPlanner
-- **Chấm điểm vị trí thành phố:** `+ gần nước, + màu mỡ, + gần tài nguyên, + địa hình xây được, - gần biên giới địch, - gần quái vật, - quá gần thành khác (tối thiểu N ô)`.
-- **Đường:** A* từ trung tâm đến cụm cần nối; ưu tiên tái sử dụng đường sẵn có; tránh cắt rừng/đất màu mỡ khi có lựa chọn khác.
-- **Zone:** R gần dịch vụ và xa công nghiệp; I ở rìa/gần mỏ/nông nghiệp, tách khỏi R; C ở trục đường chính.
-- **Hạ tầng:** chọn điểm phủ được nhiều ô thiếu nhất trong bán kính; không xây nhà máy ô nhiễm gần khu R.
-- **Dịch vụ:** cứ `N` dân cần 1 công trình (số N trong `ai.json`), đặt tại điểm tối đa dân được phủ.
-- **Mở rộng:** khi chỗ còn lại thấp hoặc tài nguyên cạn → `FoundCity` ở vị trí tốt mới và gửi một nhóm dân đi định cư.
+### 6.1 Organic Building (Xây dựng hữu cơ)
+- **Không dùng Zone:** Cư dân sẽ tự xin đất cất nhà ở ven đường hoặc gần chỗ làm nếu họ có đủ tiền tiết kiệm. Vương quốc không cần tốn tiền "tô zone".
+- **Đường:** tự mọc nối nhà dân mới vào mạng lưới có sẵn.
+- **Mở rộng:** Khi đất đai chật chội, vương quốc tự động đẩy biên giới ra xa để khai hoang.
 
 ### 6.2 EconomyManager
 - Giữ **quỹ dự phòng ≥ chi 3 tháng**; dưới ngưỡng thì không xây công trình tốn tiền (trừ nông trại khi sắp đói).

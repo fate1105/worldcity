@@ -71,70 +71,69 @@ Kích thước (64/128/256), seed, số vương quốc khởi đầu (1-8), ch�
 
 ---
 
-## 4. Cư dân
+## 4. Cư dân (Nhân tố cốt lõi)
 
-**Thuộc tính:** `id, name, race, gender, age, health, hunger(0-100), happiness(0-100), job, home, workplace, kingdom, traits[], relations[], position, state, family(cha/mẹ/con/bạn đời)`.
+Mỗi công dân là một thực thể **Utility AI** độc lập, có trạng thái, vị trí, gia phả, nhu cầu, tiền bạc và trí nhớ. 
 
-**Vòng đời:** Sơ sinh → Trẻ (0-14) → Trưởng thành → Già (60+) → Chết. Tuổi thọ theo chủng tộc.
+**Nhu cầu & Tài sản:**
+- `Hunger`: 0-100 (tăng dần, đói quá tự kiếm đồ ăn hoặc mua đồ ăn nếu có tiền).
+- `Happiness`: 0-100 (thay đổi do môi trường, làm việc, giao tiếp, kết hôn).
+- `Wealth`: Tài sản cá nhân (tăng khi làm việc, giảm khi xài tiền giải trí).
 
-**Sinh sản:** 2 người trưởng thành, cùng nhà, hạnh phúc > 50, thức ăn đủ → xác suất sinh con mỗi tháng. Con thừa hưởng trait cha mẹ (30%), ghi gia phả.
+**Hệ thống Hôn nhân & Mối quan hệ:**
+Cư dân nam nữ trưởng thành khi giao tiếp có thể nảy sinh tình cảm, cầu hôn và dọn về ở chung nhà. Nếu một người mất, người kia sẽ thành góa phụ. Trẻ em được sinh ra sẽ kế thừa chỉ số và dòng dõi của cha mẹ.
 
-**AI cá nhân (máy trạng thái):** chọn nhu cầu cấp bách nhất:
-```
-có địch gần         → FIGHT hoặc FLEE
-hunger > 70         → FIND_FOOD
-không có nhà        → FIND_HOME
-không có việc       → FIND_JOB
-ban đêm             → SLEEP
-happiness thấp      → SOCIALIZE / RELAX
-khác                → WORK
-```
+**Hành động (Utility AI) & Chu kỳ Ngày Đêm:** AI sẽ tự chấm điểm (score) tất cả hành động khả thi dựa trên nhu cầu, tính cách, thời gian trong ngày (Sáng, Trưa, Tối, Đêm) và tiền bạc để chọn ra hành động cao điểm nhất:
+- `Work`: Cày cuốc, xây dựng kiếm tiền (Được ưu tiên cực cao vào Ban ngày).
+- `Rest`: Đi ngủ. Kẻ có nhà sẽ về ngủ cùng bạn đời, kẻ vô gia cư sẽ ngủ lang thang ngoài đường (Ưu tiên tuyệt đối vào Ban đêm).
+- `Socialize`: Tìm người rảnh rỗi để trò chuyện, kết bạn hoặc tán tỉnh (Thường làm vào buổi Chiều Tối).
+- `Train`: Tập luyện thể hình để tăng chỉ số cá nhân.
+- `Crime`: Lợi dụng màn đêm chấn lột tài sản/hạnh phúc của người yếu hơn (Chỉ dành cho kẻ có trait xấu).
+- `Forage`: Vào rừng/cỏ hái lượm khi quá đói khát.
+- `Spend`: Đốt tiền để mua vui lấy lại sự hạnh phúc.
+
 Di chuyển bằng A* (đường xá tăng tốc).
-
-**Nghề:** Nông dân, Thợ gỗ, Thợ mỏ, Thợ xây, Thương nhân, Lính, Giáo viên, Bác sĩ, Pháp sư, Quan chức.
 
 **Người nổi bật:** cư dân có trait đặc biệt hoặc làm nên chuyện (thắng trận, xây kỳ quan) trở thành **Nhân vật lịch sử**: được ghi vào Chronicle, camera có thể bám theo.
 
 ---
 
-## 5. Chủng tộc và Trait
+## 5. Chủng tộc, Chỉ số và Trait
 
-| Chủng tộc | Ưu | Nhược | Thích |
-|---|---|---|---|
-| Người | Sinh sản nhanh, cân bằng | Không nổi trội | Đồng bằng |
-| Elf | Sống lâu, phép, cung | Sinh sản chậm, mong manh | Rừng |
-| Orc | Mạnh, chiến đấu | Dễ gây chiến, hạnh phúc nền thấp | Núi, sa mạc |
-| Dwarf | Đào mỏ, thợ giỏi, phòng thủ | Chậm, ghét biển | Núi |
+Mỗi cư dân có **8 Chỉ số RPG (1-100)**:
+1. Sức mạnh (Strength)
+2. Nhanh nhẹn (Agility)
+3. Trí tuệ (Intelligence)
+4. Thể lực (Endurance)
+5. Sức hút (Charisma)
+6. Khéo léo (Craftsmanship)
+7. May mắn (Luck)
+8. Dũng cảm (Bravery)
 
-**Trait (0-3/người):**
-- Tốt: Chăm chỉ, Thông minh, Dũng cảm, Khỏe mạnh, May mắn, Lãnh đạo.
-- Xấu: Lười, Hèn, Dễ ốm, Tham lam, Hung hãn, Bất hạnh.
-- Đặc biệt: Đột biến, Bị nguyền, Được ban phước, Bất tử (cực hiếm).
+**Trait (Đặc điểm cá nhân):**
+Thay vì random, Trait được sinh ra dựa trên **ngưỡng của các Chỉ số** hoặc di truyền.
+- *Hardworking (Chăm chỉ)*: Yêu cầu Thể lực > 70.
+- *Lazy (Lười)*: Yêu cầu Thể lực < 30.
+- *Leader (Lãnh đạo)*: Yêu cầu Trí tuệ > 60 & Sức hút > 70.
+- *Warrior (Chiến binh)*: Yêu cầu Sức mạnh > 70 & Dũng cảm > 70.
+- *Greedy (Tham lam)*: Yêu cầu May mắn < 40 & Sức hút < 40.
+- *Aggressive (Hung hãn)*: Yêu cầu Sức mạnh > 60 & Trí tuệ < 40.
 
-Mỗi trait là modifier số. Chi tiết trong `data/races.json`, `data/traits.json`.
+**Xếp loại (Rank):** Dựa trên trung bình cộng 8 chỉ số (Từ F - Phế phẩm đến SS - Huyền thoại). Rank hiển thị trực tiếp trên HUD để dễ theo dõi nhân tài.
 
 ---
 
-## 6. Thành phố
+## 6. Thành phố & Xây dựng tự do
 
-### 6.1 Quy hoạch (do AI hoặc Mayor)
-- **Đường:** nối các khu; đường lớn nhanh và đắt hơn.
-- **Zone:** **R** (dân cư, 3 mật độ), **C** (thương mại), **I** (công nghiệp: nông trại, mỏ, xưởng).
-- **Hạ tầng:** điện (than/gió), nước (tháp nước), phủ trong bán kính.
-- **Dịch vụ:** trường, bệnh viện, cứu hỏa, lính gác, công viên, đền thờ.
-- **Quân sự:** trại lính, tháp canh, tường thành, cổng.
-- **Đặc biệt:** cảng, chợ giao thương, thư viện, tháp pháp sư, kỳ quan.
+### 6.1 Xây dựng hữu cơ (Organic Building - Trò chơi không dùng Zone)
+Trò chơi **KHÔNG** sử dụng hệ thống Quy hoạch vùng cứng nhắc (Zones R/C/I) như SimCity. 
+Thay vào đó, Cư dân và Vương quốc sẽ **tự động** khảo sát địa hình. 
+- Nếu thiếu nhà ở, AI sẽ tự tìm một ô đất trống hợp lý (có đường, gần trung tâm, ven sông) để dựng nhà dân.
+- Tương tự với ruộng đồng, mỏ đá hay tiệm rèn, chúng mọc lên một cách tự nhiên (Organic) dựa vào nhu cầu của vương quốc tại thời điểm đó.
+- **Mở rộng bờ cõi:** Khi dân số tăng hoặc thiếu tài nguyên, vương quốc sẽ tự động "khai hoang" ra các ô xung quanh, biên giới (đường viền vương quốc) sẽ tự đẩy dần ra ngoài.
 
-### 6.2 Nhà tự mọc và nâng cấp
-```
-demandR = (jobs - population) * 0.5 + happiness_bonus
-demandC = population * 0.3 - commercial_capacity
-demandI = population * 0.2 - industrial_capacity
-```
-Ô zone có đường + điện + nước và demand > 0 → xác suất mọc nhà mỗi ngày. Nhà lên cấp 1→3 khi dịch vụ đủ, giá đất cao, ô nhiễm thấp.
-
-### 6.3 Thất bại của thành phố
-Thiếu thức ăn, nợ, ô nhiễm, tội phạm, dịch → dân bỏ đi. Thành phố có thể **suy tàn thành làng**, **bị bỏ hoang** (hoang tàn còn lại trên bản đồ), hoặc **ly khai**.
+### 6.2 Thất bại của thành phố
+Thiếu thức ăn, ô nhiễm, tội phạm, dịch → dân bỏ đi hoặc chết đói. Thành phố có thể **suy tàn thành làng**, **bị bỏ hoang** (hoang tàn còn lại trên bản đồ), hoặc **ly khai**.
 
 Danh mục công trình: `data/buildings.json`.
 

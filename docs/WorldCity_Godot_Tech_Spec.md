@@ -117,16 +117,28 @@ var pos_y: PackedFloat32Array
 var age: PackedInt32Array
 var hunger: PackedByteArray
 var happiness: PackedByteArray
-var race: PackedByteArray
-var kingdom: PackedInt32Array
-var home: PackedInt32Array
-var job: PackedInt32Array
+var race_id: PackedByteArray
+var kingdom_id: PackedInt32Array
+var home_id: PackedInt32Array
+var job_id: PackedInt32Array
 var state: PackedByteArray         # enum AIState
 var parent_a: PackedInt32Array     # gia phả
 var parent_b: PackedInt32Array
 var traits: PackedInt32Array       # bitmask
-var notable: PackedByteArray       # nhân vật lịch sử
-# id = chỉ số mảng; free-list tái sử dụng slot; tên lưu ở bảng riêng theo id
+var name_id: PackedInt32Array
+var gender: PackedByteArray        # 0: Nam, 1: Nữ
+var spouse_id: PackedInt32Array
+var wealth: PackedInt32Array
+var action_desc: Array[String]
+# 8 chỉ số RPG (Sức mạnh, Nhanh nhẹn, Trí tuệ, Thể lực, Sức hút, Khéo léo, May mắn, Dũng cảm)
+var stat_str: PackedByteArray
+var stat_agi: PackedByteArray
+var stat_int: PackedByteArray
+var stat_end: PackedByteArray
+var stat_cha: PackedByteArray
+var stat_crf: PackedByteArray
+var stat_lck: PackedByteArray
+var stat_brv: PackedByteArray
 ```
 Nếu SoA khó cho giai đoạn đầu, cho phép `class Citizen extends RefCounted` rồi chuyển SoA ở M12c. **Cấm dùng Node.**
 
@@ -254,14 +266,11 @@ Mỗi milestone: chạy được, headless không lỗi, commit Git, rồi mới
 | 3 | God mode cơ bản | Cọ địa hình, mana, mưa/sét/lửa/núi lửa | Xong |
 | 4 | Cư dân cơ bản | CitizenStore, đi lại, đói, tuổi, chết, MultiMesh, bấm xem | Xong |
 | 5 | Đường đi | AStarGrid2D, hàng đợi, đường tăng tốc | Xong |
-| 6 | Xây dựng + khu vực | Đường, zone R/C/I, điện, nước, demand, nhà tự mọc | Xong |
-| **6.5** | **Hệ thống Command** | Refactor mọi công cụ xây/quyền thần thành Command; CommandBus; log lệnh; UI chỉ phát Command | **Làm tiếp** |
-| 7 | Việc làm + kinh tế | Nhà/việc/nông trại, thuế, chi phí, thức ăn, ngân sách | |
-| 8 | Chủng tộc, trait, gia phả | Từ JSON, thừa hưởng trait, tên người, gia phả cơ bản | |
-| 9a | Vương quốc + biên giới | Thành lập, màu cờ, biên giới shader, minimap, thủ đô | |
-| 9b | **KingdomBrain + CityPlanner + EconomyManager** | Vương quốc tự chọn chỗ, xây đường/zone/hạ tầng/nông trại, giữ ngân sách. **Observer chạy được** | |
-| 9c | **PopulationManager + tính cách** | Cân bằng nhà ở/việc làm/hạnh phúc, `data/ai.json`, AI debug overlay | |
-| 10a | Ngoại giao | Quan hệ, giao thương, liên minh, cống nạp (AI tự quyết) | |
+| 6 | Xây dựng hữu cơ (Bỏ Zone) | AI tự chọn đất cất nhà, tự tạo đường, tự mở biên giới (Thay thế hệ thống Zone) | Xong |
+| 7 | Cư dân nâng cao | Nhu cầu sinh hoạt, Chu kỳ Ngày Đêm, Hệ thống tiền tệ (Wealth) | Xong |
+| 8 | 8 Chỉ số & Trait RPG | 8 chỉ số cá nhân, Trait không random, di truyền chỉ số, Hôn nhân, Gia phả | Xong |
+| 9 | Vương quốc cơ bản | AI tự phát triển lãnh thổ và điều phối tài nguyên, chuyển ngôi | Xong |
+| **10a** | **Ngoại giao** | Quan hệ, giao thương, liên minh, cống nạp (AI tự quyết) | **Làm tiếp** |
 | 10b | Chiến tranh | Quân đội, MilitaryAdvisor, tuyên chiến, chiếm thành, đình chiến | |
 | 11 | Thiên tai + sự kiện + **Chronicle** | EventDirector, DramaDirector, sự kiện lựa chọn, nhật ký có `importance` | |
 | 12a | **Chế độ quan sát** | AutoCamera, Timeline, biểu đồ, bản đồ chính trị, tốc độ x50 | |
