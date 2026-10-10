@@ -27,12 +27,31 @@ func _think(world: WorldState, k: Kingdom) -> void:
 			pop += 1
 			if citizens.job_id[cid] == -1:
 				unemployed += 1
+			else:
+				# Thu thuế thu nhập (Citizens đóng thuế 1 Wealth mỗi tháng)
+				if citizens.wealth[cid] > 0:
+					citizens.wealth[cid] -= 1
+					k.gold += 1.0
 			if citizens.home_id[cid] == -1:
 				homeless += 1
 				
 	k.population = pop
 	if pop == 0:
 		return
+		
+	# Thu thập tài nguyên từ các công trình thuộc vương quốc
+	var grid = world.tile_grid
+	for b_id in world.buildings:
+		var b = world.buildings[b_id]
+		if grid.in_bounds(b.x, b.y) and grid.owner_id[grid.idx(b.x, b.y)] == k.id:
+			if b.workers_assigned > 0:
+				if b.type == "farm": k.food += b.workers_assigned * 5.0
+				elif b.type == "lumber_camp": k.wood += b.workers_assigned * 3.0
+				elif b.type == "mine": k.stone += b.workers_assigned * 2.0
+				elif b.type == "market": k.gold += b.workers_assigned * 2.0
+	
+	# Trừ chi phí tiêu thụ thức ăn hàng tháng của vương quốc
+	k.food = maxf(0.0, k.food - pop * 1.5)
 		
 	var ai_data: Dictionary = DataDB.ai()
 	var p_data: Dictionary = ai_data.get("personalities", {}).get(k.personality, {})
