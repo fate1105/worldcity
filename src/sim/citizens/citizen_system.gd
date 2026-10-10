@@ -246,10 +246,15 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 	var score_crime = 0.0
 	var score_forage = 0.0
 	var score_spend = 0.0 # Tiêu tiền giải trí
+	var score_find_home = 0.0
+	var score_find_job = 0.0
 	
-	if is_morning: score_work += 50.0
+	if store.home_id[id] == -1: score_find_home = 60.0
+	if store.job_id[id] == -1: score_find_job = 55.0
+	
+	if is_morning: score_work += 50.0; score_find_job += 20.0
 	if is_evening: score_socialize += 40.0; score_spend += 30.0
-	if is_night: score_rest += 100.0
+	if is_night: score_rest += 100.0; score_find_home += 50.0
 	
 	if TraitSystem.has_trait(mask, "hardworking"): score_work += 50.0; score_rest -= 20.0
 	if TraitSystem.has_trait(mask, "lazy"): score_rest += 50.0; score_work -= 30.0
@@ -270,7 +275,7 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 		
 	# Tìm max score
 	var max_score = score_work
-	var action = 0 # 0: Work, 1: Rest, 2: Socialize, 3: Train, 4: Crime, 5: Forage, 6: Spend
+	var action = 0 # 0: Work, 1: Rest, 2: Socialize, 3: Train, 4: Crime, 5: Forage, 6: Spend, 7: FindHome, 8: FindJob
 	
 	if score_rest > max_score: max_score = score_rest; action = 1
 	if score_socialize > max_score: max_score = score_socialize; action = 2
@@ -278,6 +283,8 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 	if score_crime > max_score: max_score = score_crime; action = 4
 	if score_forage > max_score: max_score = score_forage; action = 5
 	if score_spend > max_score: max_score = score_spend; action = 6
+	if score_find_home > max_score: max_score = score_find_home; action = 7
+	if score_find_job > max_score: max_score = score_find_job; action = 8
 	
 	match action:
 		0: # Work
@@ -356,6 +363,49 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 			store.happiness[id] = clampi(store.happiness[id] + 15, 0, 100)
 			_wander(store, id, grid, pathfinding)
 			store.action_desc[id] = "Đang tiêu tiền mua vui"
+		7: # Find Home
+			var found_home = false
+			for b_id in world_state.buildings:
+				var b = world_state.buildings[b_id]
+				if b.type.begins_with("house"):
+					var bdata = DataDB.building(b.type)
+					var capacity = int(bdata.get("capacity", 2))
+					if b.home_citizens.size() < capacity:
+						b.home_citizens.append(id)
+						store.home_id[id] = b.id
+						store.action_desc[id] = "Vừa tìm được nhà mới!"
+						found_home = true
+						break
+			if not found_home:
+				if store.wealth[id] > 20: # Cư dân tự cất nhà
+					store.wealth[id] -= 20
+					var bx = clampi(int(store.pos_x[id]) + _rng.randi_range(-2, 2), 0, grid.width - 1)
+					var by = clampi(int(store.pos_y[id]) + _rng.randi_range(-2, 2), 0, grid.height - 1)
+					if grid.terrain[grid.idx(bx, by)] > 1 and grid.building_id[grid.idx(bx, by)] == -1:
+						var cmd = PlaceBuildingCommand.new(bx, by, "house_1", world_state.next_building_id)
+						if cmd.validate(world_state) == OK:
+							CommandBus.submit(world_state, cmd)
+							world_state.next_building_id += 1
+							store.action_desc[id] = "Đang tự cất nhà mới"
+							return
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Vô gia cư, đang đi tìm chỗ ngủ"
+		8: # Find Job
+			var found_job = false
+			for b_id in world_state.buildings:
+				var b = world_state.buildings[b_id]
+				if not b.type.begins_with("house") and not b.type.begins_with("road"):
+					var bdata = DataDB.building(b.type)
+					var capacity = int(bdata.get("workers", 2))
+					if b.workers_assigned < capacity:
+						b.workers_assigned += 1
+						store.job_id[id] = b.id
+						store.action_desc[id] = "Vừa xin được việc làm!"
+						found_job = true
+						break
+			if not found_job:
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Đang vác đơn đi xin việc"
 
 func _go_to_building(store, id, b, pathfinding):
 	var nx = b.x + _rng.randi_range(0, max(0, b.width - 1))
