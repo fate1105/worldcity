@@ -3,6 +3,9 @@ extends Node
 ## EventBus — autoload trung tâm, mọi hệ thống giao tiếp qua đây
 ## Không được gọi trực tiếp giữa các hệ thống, chỉ dùng signal
 
+# --- System ---
+signal game_log(message: String)
+
 # --- Thời gian ---
 signal tick_happened(tick_number: int)
 signal day_passed(day: int, month: int, year: int)

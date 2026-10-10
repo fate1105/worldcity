@@ -261,8 +261,21 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 	if TraitSystem.has_trait(mask, "leader"): score_socialize += 40.0
 	if TraitSystem.has_trait(mask, "warrior") or TraitSystem.has_trait(mask, "aggressive"): score_train += 40.0
 	if TraitSystem.has_trait(mask, "greedy") or TraitSystem.has_trait(mask, "aggressive"): score_crime += 40.0
+	if TraitSystem.has_trait(mask, "sickly"): score_rest += 60.0; score_work -= 40.0
 	
 	if store.wealth[id] > 50: score_spend += store.wealth[id] * 0.1
+	
+	# Trẻ em (< 18 tuổi) không đi làm, không phạm tội
+	if store.age[id] < 216:
+		score_work = -999.0
+		score_find_job = -999.0
+		score_crime = -999.0
+		score_train = -999.0
+		score_socialize += 50.0 # Thích vui chơi
+		
+	# Bần cùng sinh đạo tặc (Đói + Hết tiền)
+	if store.hunger[id] >= 70 and store.wealth[id] == 0 and store.age[id] >= 216:
+		score_crime += 150.0
 	
 	# Đói quá thì bắt buộc đi tìm đồ ăn
 	if store.hunger[id] > 50:
@@ -329,9 +342,15 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 			if target_id != -1:
 				pathfinding.request_path(id, Vector2i(int(store.pos_x[id]), int(store.pos_y[id])), Vector2i(int(store.pos_x[target_id]), int(store.pos_y[target_id])))
 				store.state[id] = AIState.WAITING_PATH
-				store.happiness[id] = clampi(store.happiness[id] + 5, 0, 100)
-				store.happiness[target_id] = clampi(store.happiness[target_id] + 5, 0, 100)
-				store.action_desc[id] = "Đang tám chuyện vui vẻ"
+				
+				if TraitSystem.has_trait(mask, "aggressive") and _rng.randf() < 0.3:
+					store.happiness[id] = clampi(store.happiness[id] - 20, 0, 100)
+					store.happiness[target_id] = clampi(store.happiness[target_id] - 20, 0, 100)
+					store.action_desc[id] = "Gây gổ đánh nhau với hàng xóm"
+				else:
+					store.happiness[id] = clampi(store.happiness[id] + 5, 0, 100)
+					store.happiness[target_id] = clampi(store.happiness[target_id] + 5, 0, 100)
+					store.action_desc[id] = "Đang tám chuyện vui vẻ"
 			else:
 				_wander(store, id, grid, pathfinding)
 				store.action_desc[id] = "Đang tìm người tâm sự"

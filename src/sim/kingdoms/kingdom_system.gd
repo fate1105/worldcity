@@ -19,6 +19,22 @@ func process_month(world: WorldState) -> void:
 		# Kiểm tra Vua
 		if k.king_id == -1 or world.citizens.alive[k.king_id] == 0:
 			_pick_new_king(world, k)
+		else:
+			# Kiểm tra đảo chính
+			var avg_happiness = 0.0
+			var pop = 0
+			for cid in range(CitizenStore.MAX_CITIZENS):
+				if world.citizens.alive[cid] == 1 and world.citizens.kingdom_id[cid] == k.id:
+					avg_happiness += world.citizens.happiness[cid]
+					pop += 1
+			if pop > 0:
+				avg_happiness /= float(pop)
+				if avg_happiness < 30.0 and _rng.randf() < 0.1: # 10% cơ hội lật đổ
+					world.citizens.happiness[k.king_id] = 0
+					world.citizens.wealth[k.king_id] = 0
+					EventBus.game_log.emit("ĐẢO CHÍNH! Cư dân tại " + k.name + " đã lật đổ vua cũ vì cai trị kém!")
+					k.king_id = -1
+					_pick_new_king(world, k)
 			
 		_brain.process_month(world, k)
 
