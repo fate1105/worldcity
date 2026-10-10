@@ -351,13 +351,15 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 				var b = world_state.buildings[store.home_id[id]]
 				_go_to_building(store, id, b, pathfinding)
 				store.state[id] = AIState.WAITING_PATH
+				store.happiness[id] = clampi(store.happiness[id] + 5, 0, 100) # Có nhà để về -> hồi phục Hạnh phúc
 				if store.spouse_id[id] != -1:
-					store.action_desc[id] = "Đang ngủ cùng bạn đời"
+					store.action_desc[id] = "Ngủ ấm áp cùng bạn đời"
 				else:
-					store.action_desc[id] = "Đang ngủ một mình"
+					store.action_desc[id] = "Đang ngủ một mình trong nhà"
 			else:
 				_wander(store, id, grid, pathfinding)
-				store.action_desc[id] = "Ngủ lang thang ngoài đường"
+				store.happiness[id] = clampi(store.happiness[id] - 2, 0, 100) # Trừ hạnh phúc vì vô gia cư
+				store.action_desc[id] = "Vô gia cư, ngủ lang thang ngoài đường"
 		2: # Socialize
 			if store.spouse_id[id] == -1 and store.age[id] >= 216: # Độc thân & đủ 18 tuổi (18*12)
 				var target_id = _find_closest_citizen(store, id, 15.0)
@@ -399,25 +401,47 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 			store.action_desc[id] = "Đang hít đất bồi dưỡng sức mạnh"
 		4: # Crime (Gây hấn / Ăn trộm)
 			var target_id = _find_closest_citizen(store, id, 5.0)
-			if target_id != -1:
-				store.happiness[target_id] = clampi(store.happiness[target_id] - 15, 0, 100)
+			if target_id != -1 and target_id != store.spouse_id[id]: # Không cướp vợ/chồng
+				store.happiness[target_id] = clampi(store.happiness[target_id] - 20, 0, 100)
 				store.happiness[id] = clampi(store.happiness[id] + 10, 0, 100)
 				if store.wealth[target_id] > 0:
 					var stolen = mini(store.wealth[target_id], 15)
 					store.wealth[target_id] -= stolen
 					store.wealth[id] += stolen
-				store.action_desc[id] = "Vừa chấn lột được tài sản"
-				store.action_desc[target_id] = "Bị cướp mất tiền!"
-			_wander(store, id, grid, pathfinding)
-			if target_id == -1: store.action_desc[id] = "Đang đi tìm con mồi"
+					store.action_desc[id] = "Vừa cướp được " + str(stolen) + " đồng"
+					store.action_desc[target_id] = "BỊ CƯỚP TRẤN LỘT!"
+				else:
+					store.action_desc[id] = "Cướp nhầm kẻ bần cùng, bực mình đánh đập"
+					store.action_desc[target_id] = "Nghèo còn bị đánh!"
+			else:
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Lảng vảng tìm con mồi để cướp"
 		5: # Forage
 			_wander_to_terrain(store, id, grid, pathfinding, [3, 4]) # Grass/Forest
 			store.action_desc[id] = "Đói rã ruột đi hái trái cây"
 		6: # Spend (Giải trí)
-			store.wealth[id] -= 5
-			store.happiness[id] = clampi(store.happiness[id] + 15, 0, 100)
-			_wander(store, id, grid, pathfinding)
-			store.action_desc[id] = "Đang tiêu tiền mua vui"
+			var found_leisure = false
+			for b_id in world_state.buildings:
+				var b = world_state.buildings[b_id]
+				if b.type == "park" or b.type == "market" or b.type == "shop_2" or b.type == "temple":
+					var dx = b.x - store.pos_x[id]
+					var dy = b.y - store.pos_y[id]
+					if dx*dx + dy*dy < 400.0: # Cách 20 ô
+						found_leisure = true
+						_go_to_building(store, id, b, pathfinding)
+						store.state[id] = AIState.WAITING_PATH
+						store.wealth[id] -= 5
+						store.happiness[id] = clampi(store.happiness[id] + 20, 0, 100)
+						store.action_desc[id] = "Đang vui chơi tại " + b.type
+						
+						# Trả tiền cho Vương quốc
+						var kid = store.kingdom_id[id]
+						if kid != -1 and world_state.kingdoms.has(kid):
+							world_state.kingdoms[kid].gold += 5.0
+						break
+			if not found_leisure:
+				_wander(store, id, grid, pathfinding)
+				store.action_desc[id] = "Đang tìm chỗ ăn chơi nhưng quanh đây không có"
 		7: # Find Home
 			var found_home = false
 			for b_id in world_state.buildings:
