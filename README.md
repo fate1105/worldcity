@@ -37,7 +37,13 @@ Nếu `/lệnh` không hiện ra, bạn gõ nội dung tương ứng bằng lờ
 - `data/`: số liệu cân bằng (JSON), chỉnh ở đây để cân bằng game
 - `src/`, `tests/`, `assets/`: agent sẽ tạo nội dung
 
-## 6. Mẹo
+## 6. Các tính năng nổi bật đã hoàn thành
+- **Utility AI siêu cấp:** Cư dân NPC có hệ thống sinh hoạt chi tiết dựa trên mức độ ưu tiên (Làm việc, Đi chơi, Ngủ, Phạm tội, Luyện tập, Kiếm ăn).
+- **Hệ thống Chỉ số & Traits (Đặc điểm):** 8 chỉ số RPG (Sức mạnh, Nhanh nhẹn, Trí tuệ, Sức hút, May mắn, v.v...) và hàng loạt Đặc điểm cá nhân tính toán dựa trên chỉ số.
+- **Tiền bạc & Hôn nhân:** Cư dân tự kiếm tiền từ việc đi làm, có thể dùng tiền mua đồ ăn hoặc giải trí. Cư dân gặp gỡ nhau có thể cầu hôn và dọn về ở chung nhà.
+- **Chu kỳ Ngày/Đêm:** Hệ thống thời gian thực thay đổi sắc độ ánh sáng từ Bình minh, Buổi trưa, Hoàng hôn, cho đến Đêm khuya kết hợp đồng bộ với AI (Ví dụ: ban đêm đổ xô đi ngủ).
+
+## 7. Mẹo
 - Mỗi lần chỉ 1 milestone, test và commit rồi mới sang tiếp.
 - Lỗi thì dán nguyên log cho agent kèm `/fix-bug`.
 - Agent hay viết nhầm API Godot 3. Nếu gặp, nhắc "Godot 4.x, xem .agents/rules/godot4.md".
