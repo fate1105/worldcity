@@ -1,50 +1,30 @@
-# WorldCity: hướng dẫn bắt đầu
+# WorldCity
 
-## 1. Cài đặt (làm 1 lần)
-1. **Godot 4.x** (bản stable mới nhất): https://godotengine.org/download
-2. **Git**: https://git-scm.com/downloads
-3. **Thêm Godot vào PATH** để agent tự chạy `godot --headless`. Windows: đổi tên file Godot thành `godot.exe`, đặt vào thư mục cố định, thêm thư mục đó vào biến môi trường PATH. Kiểm tra: mở terminal gõ `godot --version`.
-4. **Antigravity** (IDE bạn đang dùng).
+**WorldCity** là một tựa game mô phỏng 2D top-down theo phong cách **Zero-player / God Game**. Lấy cảm hứng từ *WorldBox* và *Dwarf Fortress*, trong WorldCity, thế giới sống và tự vận hành hoàn toàn độc lập. Bạn sẽ đóng vai trò là một vị thần quan sát lịch sử phát triển của các vương quốc, từ những nhóm người tiền sử đầu tiên cho đến khi xây dựng thành một đế chế hùng mạnh.
 
-## 2. Mở dự án
-1. Giải nén thư mục `worldcity`.
-2. Mở terminal trong thư mục đó: `git init` rồi `git add . && git commit -m "scaffold"`.
-3. Mở thư mục này bằng Antigravity (File > Open Folder). Nó tự đọc `AGENTS.md` và `.agents/`.
+## 🌟 Tính năng cốt lõi
 
-## 3. Bắt đầu làm game
-Trong khung chat agent của Antigravity gõ:
+- **Trò chơi tự vận hành (Autonomous):** AI Cư dân và Vương quốc tự quyết định mọi thứ. Họ tự sinh hoạt, tự đi khai hoang, dựng nhà cửa, phát triển kinh tế và ngoại giao mà không cần người chơi phải "quy hoạch" hay thao tác nhấp chuột mỏi tay.
+- **Utility AI của Cư dân:** Mỗi NPC là một thực thể độc lập có gia phả, nhu cầu (Đói, Hạnh phúc, Tiền bạc) và thời gian biểu (Ngày/Đêm). Họ biết tự kiếm việc làm, lấy tiền mua đồ ăn, đi chơi xài tiền, rảnh rỗi thì tập thể dục tăng cường sức khỏe, ban đêm lầm đường lạc lối thì đi... ăn trộm, và thậm chí là biết tán tỉnh, kết hôn với nhau!
+- **Hệ thống 8 Chỉ số RPG & Trait:** Mỗi nhân vật sở hữu 8 chỉ số riêng biệt (Sức mạnh, Nhanh nhẹn, Trí tuệ, Thể lực, Sức hút, Khéo léo, May mắn, Dũng cảm). Các chỉ số này quyết định Đặc điểm (Traits) của họ (như Chăm chỉ, Lười biếng, Hung hãn, Lãnh đạo). Chỉ số có thể được di truyền cho thế hệ sau.
+- **Xây dựng Hữu cơ (Organic Building):** Không còn chia vùng Zone cứng nhắc. Khu dân cư và công trình mọc lên một cách tự nhiên dựa trên nhu cầu thực tế của vương quốc.
+- **Tùy biến Thần Thánh:** Bạn có thể nhập vai "Thần" để can thiệp vào thế giới bất cứ lúc nào (ban mưa, sấm sét, quăng quái vật...) bằng hệ thống Mana.
 
-    /milestone 0
+## 🎮 Cách cài đặt và chơi
 
-Xong thì tự mở Godot (Import project, chọn file `project.godot` mà agent tạo), bấm F5 chạy thử.
-Nếu ổn: `git commit`, rồi `/milestone 1`, và cứ thế đến 14.
+1. **Yêu cầu:** Tải và cài đặt **Godot 4.x** (phiên bản mới nhất).
+2. Tải toàn bộ mã nguồn của kho lưu trữ (repository) này về máy.
+3. Mở **Godot Engine**, chọn **Import**, chỉ đường dẫn tới file `project.godot` trong thư mục game.
+4. Bấm **F5** (Run) để bắt đầu mô phỏng thế giới.
 
-## 4. Lệnh có sẵn
-| Lệnh | Việc |
-|---|---|
-| `/milestone N` | Làm milestone N theo Tech Spec |
-| `/fix-bug <log>` | Sửa lỗi, tìm nguyên nhân gốc |
-| `/review-architecture` | Rà soát kiến trúc sau mỗi 2-3 milestone |
-| `/perf-check` | Đo và tối ưu hiệu năng |
+## 🛠 Dành cho Nhà phát triển
 
-Nếu `/lệnh` không hiện ra, bạn gõ nội dung tương ứng bằng lời, ví dụ: "Làm theo quy trình trong .agents/workflows/milestone.md cho milestone 1".
+WorldCity được xây dựng với nguyên tắc kiến trúc tách biệt rõ ràng giữa **Mô phỏng (Simulation)** và **Hiển thị (View)**, cho phép game có thể chạy *Headless* (không cần render đồ họa) để kiểm thử dữ liệu qua hàng trăm năm lịch sử.
 
-## 5. Cấu trúc
-- `AGENTS.md`: luật cốt lõi, agent luôn đọc
-- `.agents/rules/`: luật chi tiết (Godot 4, kiến trúc, kỷ luật)
-- `.agents/workflows/`: quy trình
-- `docs/`: GDD (gameplay) và Tech Spec (kiến trúc, 15 milestone)
-- `data/`: số liệu cân bằng (JSON), chỉnh ở đây để cân bằng game
-- `src/`, `tests/`, `assets/`: agent sẽ tạo nội dung
+Các tài liệu quan trọng nằm trong thư mục `docs/`:
+- `GDD_WorldCity.md`: Thiết kế Gameplay chi tiết.
+- `WorldCity_Godot_Tech_Spec.md`: Tài liệu kiến trúc Godot, hệ thống Command và quản lý dữ liệu lớn (Struct of Arrays / PackedArray).
+- `AUTONOMOUS_MODE.md`: Chi tiết về cách tổ chức Utility AI và tư duy của Vương quốc.
+- Thư mục `data/`: Chứa các file JSON dùng để cân bằng game mà không cần đụng vào code.
 
-## 6. Các tính năng nổi bật đã hoàn thành
-- **Utility AI siêu cấp:** Cư dân NPC có hệ thống sinh hoạt chi tiết dựa trên mức độ ưu tiên (Làm việc, Đi chơi, Ngủ, Phạm tội, Luyện tập, Kiếm ăn).
-- **Hệ thống Chỉ số & Traits (Đặc điểm):** 8 chỉ số RPG (Sức mạnh, Nhanh nhẹn, Trí tuệ, Sức hút, May mắn, v.v...) và hàng loạt Đặc điểm cá nhân tính toán dựa trên chỉ số.
-- **Tiền bạc & Hôn nhân:** Cư dân tự kiếm tiền từ việc đi làm, có thể dùng tiền mua đồ ăn hoặc giải trí. Cư dân gặp gỡ nhau có thể cầu hôn và dọn về ở chung nhà.
-- **Chu kỳ Ngày/Đêm:** Hệ thống thời gian thực thay đổi sắc độ ánh sáng từ Bình minh, Buổi trưa, Hoàng hôn, cho đến Đêm khuya kết hợp đồng bộ với AI (Ví dụ: ban đêm đổ xô đi ngủ).
-
-## 7. Mẹo
-- Mỗi lần chỉ 1 milestone, test và commit rồi mới sang tiếp.
-- Lỗi thì dán nguyên log cho agent kèm `/fix-bug`.
-- Agent hay viết nhầm API Godot 3. Nếu gặp, nhắc "Godot 4.x, xem .agents/rules/godot4.md".
-- Đừng cho nhiều agent chạy song song sửa cùng file.
+> **WorldCity - Nơi bạn ngắm nhìn những vương quốc trỗi dậy và suy tàn.**
