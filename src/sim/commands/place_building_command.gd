@@ -22,6 +22,22 @@ func validate(state: WorldState) -> Error:
 	var bh: int = int(size[1])
 	var grid: TileGrid = state.tile_grid
 	
+	var terrain_map: Dictionary = {
+		"deep_water": 0, "shallow_water": 1, "sand": 2, "grass": 3,
+		"forest": 4, "mountain": 5, "snow": 6, "desert": 7, "swamp": 8, "lava": 9
+	}
+	
+	var terrain_ok_str: Array = b_data.get("terrain_ok", [])
+	var terrain_near_str: Array = b_data.get("terrain_near", [])
+	
+	var terrain_ok: Array[int] = []
+	for s in terrain_ok_str: terrain_ok.append(terrain_map.get(s, -1))
+	var terrain_near: Array[int] = []
+	for s in terrain_near_str: terrain_near.append(terrain_map.get(s, -1))
+
+	var is_near_ok: bool = false
+	if terrain_near.is_empty(): is_near_ok = true
+	
 	for dy in range(bh):
 		for dx in range(bw):
 			var nx: int = tx + dx
@@ -31,8 +47,23 @@ func validate(state: WorldState) -> Error:
 			var idx: int = grid.idx(nx, ny)
 			if grid.building_id[idx] != -1:
 				return FAILED
-			if grid.terrain[idx] <= 1 or grid.terrain[idx] == 5 or grid.terrain[idx] == 9:
+			
+			var t: int = grid.terrain[idx]
+			if t <= 1 or t == 5 or t == 9:
 				return FAILED
+				
+			if not terrain_ok.is_empty() and not terrain_ok.has(t):
+				return FAILED
+				
+			if not is_near_ok:
+				for d in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]:
+					var ax: int = nx + d.x
+					var ay: int = ny + d.y
+					if grid.in_bounds(ax, ay) and terrain_near.has(grid.terrain[grid.idx(ax, ay)]):
+						is_near_ok = true
+						
+	if not is_near_ok:
+		return FAILED
 	var cost: float = float(b_data.get("cost", 0))
 	var owner_id: int = grid.owner_id[grid.idx(tx, ty)]
 	if owner_id != -1 and state.kingdoms.has(owner_id):
