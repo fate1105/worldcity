@@ -108,8 +108,28 @@ func process_day(world_state: WorldState) -> void:
 					store.hunger[id] = maxi(0, store.hunger[id] - 20)
 		
 		if store.hunger[id] >= 100:
+			_inheritance(world_state, id)
 			store.kill(id)
 			continue
+
+## Xử lý thừa kế tài sản
+func _inheritance(world: WorldState, id: int) -> void:
+	var store = world.citizens
+	var estate = store.wealth[id]
+	if estate <= 0: return
+	store.wealth[id] = 0
+	
+	# Người thừa kế (vợ/chồng)
+	if store.spouse_id[id] != -1 and store.alive[store.spouse_id[id]] == 1:
+		store.wealth[store.spouse_id[id]] += estate
+		store.spouse_id[store.spouse_id[id]] = -1 # Trở thành góa bụa
+		EventBus.game_log.emit("Vợ/Chồng được thừa hưởng tài sản sau khi bạn đời qua đời.")
+		return
+		
+	# Nếu không có vợ/chồng, thì vương quốc tịch thu sung công quỹ (Thuế thừa kế vô thừa nhận)
+	var kid = store.kingdom_id[id]
+	if kid != -1 and world.kingdoms.has(kid):
+		world.kingdoms[kid].gold += estate
 
 ## Gọi mỗi tháng
 func process_month(world_state: WorldState) -> void:
@@ -134,6 +154,7 @@ func process_month(world_state: WorldState) -> void:
 		if store.age[id] > lifespan_months:
 			var over: int = store.age[id] - lifespan_months
 			if _rng.randf() < float(over) / 120.0:
+				_inheritance(world_state, id)
 				store.kill(id)
 				continue
 
@@ -280,11 +301,26 @@ func _decide_action(world_state: WorldState, id: int, pathfinding: PathfindingSy
 	# Đói quá thì bắt buộc đi tìm đồ ăn
 	if store.hunger[id] > 50:
 		score_forage = store.hunger[id] * 2.0
-		if store.wealth[id] >= 10: # Dùng tiền mua đồ ăn nhanh
-			store.wealth[id] -= 10
-			store.hunger[id] = 0
-			store.action_desc[id] = "Vừa tốn tiền mua bánh mì"
-			return
+		if store.wealth[id] >= 10: # Dùng tiền mua đồ ăn
+			var kid = store.kingdom_id[id]
+			if kid != -1 and world_state.kingdoms.has(kid):
+				var k = world_state.kingdoms[kid]
+				if k.food >= 1.0: # Vương quốc còn thức ăn
+					k.food -= 1.0
+					k.gold += 5.0 # Vương quốc bán thức ăn
+					store.wealth[id] -= 10
+					store.hunger[id] = 0
+					store.action_desc[id] = "Được vương quốc bán lương thực"
+					return
+				else: # Vương quốc hết thức ăn -> Nạn đói
+					store.action_desc[id] = "Có tiền mà vương quốc hết sạch lương thực!"
+			else:
+				if store.wealth[id] >= 15:
+					# Vô gia cư, mua thức ăn chợ đen đắt đỏ
+					store.wealth[id] -= 15
+					store.hunger[id] = 0
+					store.action_desc[id] = "Mua đồ ăn lậu giá cắt cổ"
+					return
 		
 	# Tìm max score
 	var max_score = score_work
